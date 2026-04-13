@@ -1,0 +1,32 @@
+/* Custom styles */
+.mainbg {
+    background-image: url(../assets/Bg-Images/color-palette-abstract.jpg);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+.logo {
+    background-image: url(../assets/Logo-images/Palette-logo.png);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 9999px; /* Fully rounded */
+    height: 100px;
+    width: 100px;
+}
+
+#generate-btn {
+    background: linear-gradient(135deg, blue, purple, orange);
+    background-size: 200% 200%;
+    transition: transform 0.3s ease, background-position 0.6s ease;
+}
+
+#generate-btn:hover {
+    transform: scale(1.08) rotate(-6deg);
+    background-position: right center;
+}

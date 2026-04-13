@@ -1,0 +1,29 @@
+FRONTEND: Start
+C:\xampp\htdocs\Color-Palette-Generator\FRONTEND\Palette> npm run dev
+
+BACKEND: Start
+C:\xampp\htdocs\Color-Palette-Generator\BACKEND> php artisan serve
+
+Loading Screen:
+<template>
+  <!-- Loader (completely out of layout flow) -->
+  <LoadingScreen :class="{ hidden: !isLoading }" />
+
+  <!-- Page -->
+  <div class="page" v-show="!isLoading">
+    <!-- your whole content -->
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import LoadingScreen from './LoadingScreen.vue'
+
+const isLoading = ref(true)
+
+onMounted(() => {
+  setTimeout(() => {
+    isLoading.value = false
+  }, 1000)
+})
+</script>
