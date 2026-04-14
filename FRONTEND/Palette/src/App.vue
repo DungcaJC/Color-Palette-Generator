@@ -1,14 +1,19 @@
 <template>
+  <!-- App.vue -->
+
   <div>
-    <!-- Loading Screen -->
-    <LoadingScreen v-if="isLoading" />
+    <Transition name="fade">
+      <LoadingScreen v-if="isLoading" />
+    </Transition>
 
     <TheNavbar
       @navigate="navigate"
       @logout="handleLogout"
+      @goToPalette="handleGoToPalette"
     />
     <component
       :is="activeComp"
+      :scrollToId="scrollToId"
       @navigate="navigate"
       @loggedIn="handleLogin"
     />
@@ -31,13 +36,11 @@ import SavePalette         from './components/SavePalette.vue'
 import './assets/style.css'
 
 const { isLoggedIn, logout } = useAuth()
-
 const isLoading = ref(true)
+const scrollToId = ref(null)
 
 onMounted(() => {
-  setTimeout(() => {
-    isLoading.value = false
-  }, 1500)
+  setTimeout(() => { isLoading.value = false }, 1500)
 })
 
 const compMap = {
@@ -52,23 +55,39 @@ const compMap = {
 
 const activeComp = shallowRef(compMap.Heroes)
 
+function showLoading(callback) {
+  isLoading.value = true
+  setTimeout(() => {
+    callback()
+    setTimeout(() => { isLoading.value = false }, 600)
+  }, 600)
+}
+
 function navigate(name) {
-  activeComp.value = compMap[name] ?? compMap.Heroes
+  scrollToId.value = null
+  showLoading(() => { activeComp.value = compMap[name] ?? compMap.Heroes })
 }
 
 function handleLogin() {
-  activeComp.value = compMap.Heroes
+  showLoading(() => { activeComp.value = compMap.Heroes })
 }
 
 async function handleLogout() {
   await logout()
-  activeComp.value = compMap.Heroes
+  showLoading(() => { activeComp.value = compMap.Heroes })
+}
+
+function handleGoToPalette(paletteId) {
+  scrollToId.value = paletteId
+  showLoading(() => { activeComp.value = compMap.SavePalette })
 }
 </script>
 
 <style>
-  * {
-    user-select: none;
-    caret-color: transparent;
-  }
+* {
+  user-select: none;
+  caret-color: transparent;
+}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.6s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

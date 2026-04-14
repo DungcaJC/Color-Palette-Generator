@@ -1,12 +1,14 @@
-// usePaletteStore.js
+// usePaletteStore.js - Manages palette storage for both guests and logged-in users
 
 import axios from 'axios'
 import { useAuth } from './useAuth'
+import { useNotifications } from './useNotifications'
 
 const GUEST_KEY = 'guest_saved_palettes'
 
 export function usePaletteStore() {
   const { isLoggedIn } = useAuth()
+  const { addNotification } = useNotifications()
 
   async function getAll() {
     if (!isLoggedIn()) {
@@ -29,6 +31,8 @@ export function usePaletteStore() {
       colors: palette.colors,
       source: palette.source,
     })
+    // Only notify when logged in
+    addNotification({ ...palette, id: data.id ?? palette.id })
     return data
   }
 

@@ -47,7 +47,9 @@
         <div
           v-for="palette in filtered"
           :key="palette.id"
+          :id="`palette-${palette.id}`"
           class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100"
+          :class="scrollToId === palette.id ? 'ring-2 ring-indigo-400' : ''"
         >
           <!-- Color bar -->
           <div class="flex h-20">
@@ -108,9 +110,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useAuth } from '../composables/useAuth'
 import { usePaletteStore } from '../composables/usePaletteStore'
+
+const props = defineProps({ scrollToId: { type: String, default: null } })
 
 const { isLoggedIn } = useAuth()
 const { getAll, remove } = usePaletteStore()
@@ -118,16 +122,25 @@ const { getAll, remove } = usePaletteStore()
 const palettes = ref([])
 const activeTab = ref('all')
 const copied = ref('')
+const scrollToId = ref(props.scrollToId)
 
 const GUEST_KEY = 'guest_saved_palettes'
 
-// Load palettes — from localStorage if guest, from DB if logged in
 onMounted(async () => {
   if (isLoggedIn()) {
     palettes.value = await getAll()
   } else {
     const stored = localStorage.getItem(GUEST_KEY)
     palettes.value = stored ? JSON.parse(stored) : []
+  }
+
+  // Scroll to target palette if coming from notification
+  if (scrollToId.value) {
+    await nextTick()
+    setTimeout(() => {
+      const el = document.getElementById(`palette-${scrollToId.value}`)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 100)
   }
 })
 
