@@ -1,4 +1,6 @@
 <template>
+  <!--KeywordColorPalette.vue-->
+
   <div class="min-h-screen bg-gray-50 p-8">
 
     <!-- Search Bar -->
@@ -225,3 +227,14 @@ function saveSelected() {
   setTimeout(() => savedMsg.value = '', 3000)
 }
 </script>
+
+<style>
+  .keyword-palette-enter-active, .keyword-palette-leave-active {
+    transition: all 0.3s ease;
+  }
+
+  input {
+    user-select: text; /* Allow text selection */
+    caret-color: black; /* Not transparent */
+  }
+</style>

@@ -1,4 +1,6 @@
 <template>
+  <!--ColorPalette.vue-->
+
   <div id="Generate-image" class="min-h-screen bg-gray-50 flex items-center justify-center p-8">
     <div class="flex gap-10 w-full">
 
@@ -249,8 +251,8 @@ async function generate() {
   palettes.value = []
   selection.value = new Set()
   const results = await Promise.all(
-    Array.from({ length: paletteCount.value }, () =>
-      generateFromImage(imgEl.value, colorCount.value)
+    Array.from({ length: paletteCount.value }, (_, i) =>
+      generateFromImage(imgEl.value, colorCount.value, i) // ← pass palette index
     )
   )
   palettes.value = results

@@ -1,4 +1,6 @@
 <template>
+  <!--Heroes.vue-->
+
   <!-- Root: full screen dark background -->
   <div class="mainbg flex h-screen w-full bg-[#0d1117] overflow-hidden font-sans">
 

@@ -1,4 +1,6 @@
 <template>
+  <!--LoadingScreen.vue-->
+
   <div class="loading-screen">
     <div class="color-wheel"></div>
     <p class="loading-text">Loading...</p>

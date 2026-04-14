@@ -1,25 +1,45 @@
-const STORAGE_KEY = 'saved_palettes'
+// usePaletteStore.js
+
+import axios from 'axios'
+import { useAuth } from './useAuth'
+
+const GUEST_KEY = 'guest_saved_palettes'
 
 export function usePaletteStore() {
+  const { isLoggedIn } = useAuth()
 
-  function getAll() {
-    try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []
-    } catch {
-      return []
+  async function getAll() {
+    if (!isLoggedIn()) {
+      const stored = localStorage.getItem(GUEST_KEY)
+      return stored ? JSON.parse(stored) : []
     }
+    const { data } = await axios.get('/api/palettes')
+    return data
   }
 
-  function save(palette) {
-    // palette: { id, name, colors: ['#hex',...], source: 'created'|'image'|'keyword', createdAt }
-    const all = getAll()
-    all.unshift(palette)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  async function save(palette) {
+    if (!isLoggedIn()) {
+      const existing = JSON.parse(localStorage.getItem(GUEST_KEY) || '[]')
+      existing.push(palette)
+      localStorage.setItem(GUEST_KEY, JSON.stringify(existing))
+      return
+    }
+    const { data } = await axios.post('/api/palettes', {
+      name:   palette.name,
+      colors: palette.colors,
+      source: palette.source,
+    })
+    return data
   }
 
-  function remove(id) {
-    const all = getAll().filter(p => p.id !== id)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+  async function remove(id) {
+    if (!isLoggedIn()) {
+      const existing = JSON.parse(localStorage.getItem(GUEST_KEY) || '[]')
+      const updated = existing.filter(p => p.id !== id)
+      localStorage.setItem(GUEST_KEY, JSON.stringify(updated))
+      return
+    }
+    await axios.delete(`/api/palettes/${id}`)
   }
 
   function generateId() {

@@ -1,4 +1,6 @@
 <template>
+  <!--SavePalette.vue-->
+
   <div class="min-h-screen bg-gray-50 p-8">
     <div class="max-w-5xl mx-auto flex flex-col gap-6">
 
@@ -107,13 +109,27 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAuth } from '../composables/useAuth'
 import { usePaletteStore } from '../composables/usePaletteStore'
 
+const { isLoggedIn } = useAuth()
 const { getAll, remove } = usePaletteStore()
 
 const palettes = ref([])
 const activeTab = ref('all')
 const copied = ref('')
+
+const GUEST_KEY = 'guest_saved_palettes'
+
+// Load palettes — from localStorage if guest, from DB if logged in
+onMounted(async () => {
+  if (isLoggedIn()) {
+    palettes.value = await getAll()
+  } else {
+    const stored = localStorage.getItem(GUEST_KEY)
+    palettes.value = stored ? JSON.parse(stored) : []
+  }
+})
 
 const tabs = [
   { label: 'All',     value: 'all'     },
@@ -142,13 +158,22 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function deletePalette(id) {
-  remove(id)
-  palettes.value = getAll()
+async function deletePalette(id) {
+  if (isLoggedIn()) {
+    await remove(id)
+    palettes.value = await getAll()
+  } else {
+    palettes.value = palettes.value.filter(p => p.id !== id)
+    localStorage.setItem(GUEST_KEY, JSON.stringify(palettes.value))
+  }
 }
 
 function clearAll() {
-  localStorage.removeItem('saved_palettes')
+  if (isLoggedIn()) {
+    localStorage.removeItem('saved_palettes')
+  } else {
+    localStorage.removeItem(GUEST_KEY)
+  }
   palettes.value = []
 }
 
@@ -166,6 +191,4 @@ function exportPalette(palette) {
   a.download = `${palette.name.replace(/\s+/g, '_')}.txt`
   a.click()
 }
-
-onMounted(() => { palettes.value = getAll() })
 </script>

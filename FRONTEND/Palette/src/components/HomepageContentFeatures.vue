@@ -1,4 +1,6 @@
 <template>
+  <!--HomepageContentFeatures.vue-->
+
   <section class="features-section">
     <div
       v-for="(feature, index) in features"

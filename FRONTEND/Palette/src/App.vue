@@ -1,50 +1,74 @@
 <template>
   <div>
-    <!-- Global Loading Screen -->
-    <LoadingScreen :class="{ hidden: !isLoading }" />
+    <!-- Loading Screen -->
+    <LoadingScreen v-if="isLoading" />
 
-    <!-- Navbar -->
-    <TheNavbar @navigate="navigate" />
-
-    <!-- Page Component -->
-    <div v-show="!isLoading">
-      <component :is="activeComp" />
-    </div>
+    <TheNavbar
+      @navigate="navigate"
+      @logout="handleLogout"
+    />
+    <component
+      :is="activeComp"
+      @navigate="navigate"
+      @loggedIn="handleLogin"
+    />
   </div>
 </template>
 
 <script setup>
-import { shallowRef, markRaw, ref } from 'vue'
-import TheNavbar from './components/Navbar.vue'
-import LoadingScreen from './components/LoadingScreen.vue'
+import { shallowRef, markRaw, ref, onMounted } from 'vue'
+import { useAuth } from './composables/useAuth'
 
-import Heroes from './components/Heroes.vue'
+import LoadingScreen       from './components/LoadingScreen.vue'
+import TheNavbar           from './components/Navbar.vue'
+import Heroes              from './components/Heroes.vue'
+import Login               from './components/Login.vue'
+import Signup              from './components/Signup.vue'
 import KeywordColorPalette from './components/KeywordColorPalette.vue'
-import ColorPalette from './components/ColorPalette.vue'
-import CreatePalette from './components/CreatePalette.vue'
-import SavePalette from './components/SavePalette.vue'
-
+import ColorPalette        from './components/ColorPalette.vue'
+import CreatePalette       from './components/CreatePalette.vue'
+import SavePalette         from './components/SavePalette.vue'
 import './assets/style.css'
 
-const isLoading = ref(false)
+const { isLoggedIn, logout } = useAuth()
 
-// Prevent Vue reactive warning
+const isLoading = ref(true)
+
+onMounted(() => {
+  setTimeout(() => {
+    isLoading.value = false
+  }, 1500)
+})
+
 const compMap = {
-  Heroes: markRaw(Heroes),
+  Heroes:              markRaw(Heroes),
+  Login:               markRaw(Login),
+  Signup:              markRaw(Signup),
   KeywordColorPalette: markRaw(KeywordColorPalette),
-  ColorPalette: markRaw(ColorPalette),
-  CreatePalette: markRaw(CreatePalette),
-  SavePalette: markRaw(SavePalette),
+  ColorPalette:        markRaw(ColorPalette),
+  CreatePalette:       markRaw(CreatePalette),
+  SavePalette:         markRaw(SavePalette),
 }
 
 const activeComp = shallowRef(compMap.Heroes)
 
 function navigate(name) {
-  isLoading.value = true
+  activeComp.value = compMap[name] ?? compMap.Heroes
+}
 
-  setTimeout(() => {
-    activeComp.value = compMap[name] ?? compMap.Heroes
-    isLoading.value = false
-  }, 1000)
+function handleLogin() {
+  activeComp.value = compMap.Heroes
+}
+
+async function handleLogout() {
+  await logout()
+  activeComp.value = compMap.Heroes
 }
 </script>
+
+<style>
+  * {
+    user-select: none;
+    caret-color: transparent;
+  }
+</style>

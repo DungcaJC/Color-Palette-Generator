@@ -1,4 +1,6 @@
 <template>
+  <!--CreatePalette.vue-->
+
   <div class="min-h-screen bg-gray-50 flex items-center justify-center p-8">
     <div class="w-full max-w-3xl flex flex-col gap-6">
 
