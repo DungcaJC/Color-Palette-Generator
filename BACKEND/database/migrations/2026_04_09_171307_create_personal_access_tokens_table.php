@@ -1,4 +1,5 @@
 <?php
+// database/migrations/2026_04_09_171307_create_personal_access_tokens_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

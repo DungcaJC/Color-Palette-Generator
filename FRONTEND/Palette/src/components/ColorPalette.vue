@@ -7,7 +7,6 @@
       <!-- Left Panel -->
       <div class="flex flex-col gap-5 w-96 shrink-0">
 
-        <!-- Upload Box -->
         <div
           class="bg-white rounded-3xl shadow-md aspect-square flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition overflow-hidden"
           @click="triggerUpload"
@@ -25,49 +24,34 @@
           </div>
         </div>
 
-        <!-- Colors Per Palette -->
         <div>
           <p class="text-xs text-gray-400 font-medium mb-2 tracking-widest uppercase">Colors per palette</p>
           <div class="flex gap-2">
             <button
-              v-for="n in [3, 5, 7, 9]"
-              :key="n"
-              @click="colorCount = n"
+              v-for="n in [3, 5, 7, 9]" :key="n" @click="colorCount = n"
               class="flex-1 py-2.5 rounded-full border text-sm font-medium transition"
-              :class="colorCount === n
-                ? 'bg-black text-white border-black'
-                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'"
-            >
-              {{ n }}
-            </button>
+              :class="colorCount === n ? 'bg-black text-white border-black' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'"
+            >{{ n }}</button>
           </div>
           <p v-if="colorCount >= 7" class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mt-3 leading-relaxed">
-            ⚠️ 7 colors or above will sometimes generate colors that don't appear in the picture. Try reducing the number of colors if you want more accurate results.
+            ⚠️ 7 colors or above will sometimes generate colors that don't appear in the picture.
           </p>
         </div>
 
-        <!-- Number of Palettes -->
         <div>
           <p class="text-xs text-gray-400 font-medium mb-2 tracking-widest uppercase">Number of palettes</p>
           <div class="flex gap-2">
             <button
-              v-for="n in [1, 3, 5, 7]"
-              :key="n"
-              @click="paletteCount = n"
+              v-for="n in [1, 3, 5, 7]" :key="n" @click="paletteCount = n"
               class="flex-1 py-2.5 rounded-full border text-sm font-medium transition"
-              :class="paletteCount === n
-                ? 'bg-black text-white border-black'
-                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'"
-            >
-              {{ n }}
-            </button>
+              :class="paletteCount === n ? 'bg-black text-white border-black' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'"
+            >{{ n }}</button>
           </div>
           <p v-if="paletteCount >= 5" class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mt-3 leading-relaxed">
             ⚠️ 5 palettes or above may produce results that vary further from your image.
           </p>
         </div>
 
-        <!-- Generate Button -->
         <button
           @click="generate"
           :disabled="loading || !imgEl"
@@ -77,20 +61,18 @@
           {{ loading ? 'GENERATING...' : 'GENERATE' }}
         </button>
 
-        <!-- Save Selected Button -->
         <button
           @click="saveSelected"
-          :disabled="selectedColors.length === 0"
+          :disabled="selectedColors.length === 0 || saving"
           class="w-full py-4 rounded-full text-white font-bold text-sm tracking-widest disabled:opacity-40 transition hover:opacity-90"
           style="background: linear-gradient(to right, #f59e0b, #f97316)"
         >
-          SAVE SELECTED
+          {{ saving ? 'SAVING...' : 'SAVE SELECTED' }}
           <span v-if="selectedColors.length > 0" class="ml-2 bg-white/30 text-white text-xs px-2 py-0.5 rounded-full">
             {{ selectedColors.length }}
           </span>
         </button>
 
-        <!-- Clear Selection -->
         <button
           v-if="selectedColors.length > 0"
           @click="clearSelection"
@@ -110,36 +92,25 @@
           Upload an image and hit Generate
         </p>
 
-        <div
-          v-for="(palette, pi) in palettes"
-          :key="pi"
-          class="flex flex-col gap-2"
-        >
-          <!-- Palette label + select all row -->
+        <div v-for="(palette, pi) in palettes" :key="pi" class="flex flex-col gap-2">
           <div class="flex items-center justify-between px-1">
             <span class="text-xs text-gray-400 font-medium">Palette {{ pi + 1 }}</span>
-            <button
-              @click="toggleSelectAll(pi)"
-              class="text-xs text-indigo-500 hover:text-indigo-700 transition"
-            >
+            <button @click="toggleSelectAll(pi)" class="text-xs text-indigo-500 hover:text-indigo-700 transition">
               {{ isAllSelected(pi) ? 'Deselect all' : 'Select all' }}
             </button>
           </div>
 
-          <!-- Color bar with checkboxes -->
           <div class="flex rounded-2xl overflow-hidden h-40 w-full shadow-sm">
             <div
-              v-for="(color, ci) in palette"
-              :key="ci"
+              v-for="(color, ci) in palette" :key="ci"
               class="relative flex flex-col items-center justify-between py-3 cursor-pointer transition-all duration-300 ease-in-out"
               :style="{ backgroundColor: color.css, flex: hoveredPalette === pi && hoveredColor === ci ? 3 : 1 }"
               :class="{ 'ring-4 ring-white ring-inset': isSelected(pi, ci) }"
               @mouseenter="hoveredPalette = pi; hoveredColor = ci"
               @mouseleave="hoveredPalette = null; hoveredColor = null"
             >
-              <!-- Checkbox top -->
               <div
-                @click="toggleColor(pi, ci, color.hex)"
+                @click="toggleColor(pi, ci)"
                 class="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center transition cursor-pointer"
                 :class="isSelected(pi, ci) ? 'bg-white' : 'bg-white/20'"
               >
@@ -148,7 +119,6 @@
                 </svg>
               </div>
 
-              <!-- Hex label bottom — click to copy -->
               <span
                 class="text-xs font-mono text-white drop-shadow transition-opacity duration-200 select-none cursor-pointer"
                 :style="{ opacity: hoveredPalette === pi && hoveredColor === ci ? 1 : 0 }"
@@ -171,9 +141,11 @@
 import { ref, computed } from 'vue'
 import { useColormind } from '../composables/useColormind'
 import { usePaletteStore } from '../composables/usePaletteStore'
+import { useNotifications } from '../composables/useNotifications'
 
 const { loading, error, generateFromImage } = useColormind()
 const { save, generateId } = usePaletteStore()
+const { addNotification } = useNotifications()
 
 const fileInput = ref(null)
 const previewUrl = ref('')
@@ -185,24 +157,19 @@ const hoveredPalette = ref(null)
 const hoveredColor = ref(null)
 const copied = ref('')
 const savedMsg = ref('')
-
-// selected is a Set of "pi-ci" keys
+const saving = ref(false)
 const selection = ref(new Set())
 
 const selectedColors = computed(() => {
   const result = []
   selection.value.forEach(key => {
     const [pi, ci] = key.split('-').map(Number)
-    if (palettes.value[pi]?.[ci]) {
-      result.push(palettes.value[pi][ci].hex)
-    }
+    if (palettes.value[pi]?.[ci]) result.push(palettes.value[pi][ci].hex)
   })
   return result
 })
 
-function isSelected(pi, ci) {
-  return selection.value.has(`${pi}-${ci}`)
-}
+function isSelected(pi, ci) { return selection.value.has(`${pi}-${ci}`) }
 
 function toggleColor(pi, ci) {
   const key = `${pi}-${ci}`
@@ -211,9 +178,7 @@ function toggleColor(pi, ci) {
   selection.value = next
 }
 
-function isAllSelected(pi) {
-  return palettes.value[pi]?.every((_, ci) => isSelected(pi, ci))
-}
+function isAllSelected(pi) { return palettes.value[pi]?.every((_, ci) => isSelected(pi, ci)) }
 
 function toggleSelectAll(pi) {
   const next = new Set(selection.value)
@@ -225,10 +190,7 @@ function toggleSelectAll(pi) {
   selection.value = next
 }
 
-function clearSelection() {
-  selection.value = new Set()
-}
-
+function clearSelection() { selection.value = new Set() }
 function triggerUpload() { fileInput.value.click() }
 
 function loadFile(file) {
@@ -252,7 +214,7 @@ async function generate() {
   selection.value = new Set()
   const results = await Promise.all(
     Array.from({ length: paletteCount.value }, (_, i) =>
-      generateFromImage(imgEl.value, colorCount.value, i) // ← pass palette index
+      generateFromImage(imgEl.value, colorCount.value, i)
     )
   )
   palettes.value = results
@@ -264,17 +226,27 @@ async function copyHex(hex) {
   setTimeout(() => copied.value = '', 2000)
 }
 
-function saveSelected() {
+async function saveSelected() {
   if (selectedColors.value.length === 0) return
-  save({
-    id: generateId(),
-    name: `Image Palette`,
-    colors: selectedColors.value,
-    source: 'image',
-    createdAt: new Date().toISOString(),
-  })
-  savedMsg.value = `✓ ${selectedColors.value.length} colors saved to collection!`
-  clearSelection()
-  setTimeout(() => savedMsg.value = '', 3000)
+  saving.value = true
+  try {
+    const palette = {
+      id: generateId(),
+      name: 'Image Palette',
+      colors: selectedColors.value,
+      source: 'image',
+      createdAt: new Date().toISOString(),
+    }
+    // ✅ await so we get the real server id back if logged in
+    const result = await save(palette)
+    addNotification(result)
+    savedMsg.value = `✓ ${selectedColors.value.length} colors saved to collection!`
+    clearSelection()
+    setTimeout(() => savedMsg.value = '', 3000)
+  } catch (e) {
+    error.value = 'Failed to save. Please try again.'
+  } finally {
+    saving.value = false
+  }
 }
 </script>

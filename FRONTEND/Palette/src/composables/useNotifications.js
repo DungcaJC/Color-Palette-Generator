@@ -1,54 +1,40 @@
-// useNotifications.js
+// src/composables/useNotifications.js
 
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
-const NOTIF_KEY = 'palette_notifications'
+const notifications = ref(JSON.parse(localStorage.getItem('notifications') || '[]'))
 
-const notifications = ref(loadNotifs())
-
-function loadNotifs() {
-  return JSON.parse(localStorage.getItem(NOTIF_KEY) || '[]')
-}
-
-function saveNotifs() {
-  localStorage.setItem(NOTIF_KEY, JSON.stringify(notifications.value))
+function persist() {
+  localStorage.setItem('notifications', JSON.stringify(notifications.value))
 }
 
 export function useNotifications() {
 
+  const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
+
   function addNotification(palette) {
-    notifications.value.unshift({
-      id:        palette.id,
+    const notif = {
+      id:        Date.now().toString(36) + Math.random().toString(36).slice(2),
       paletteId: palette.id,
       name:      palette.name,
       colors:    palette.colors.slice(0, 5),
-      read:      false,
       date:      new Date().toISOString(),
-    })
-    saveNotifs()
+      read:      false,
+    }
+    notifications.value.unshift(notif)
+    if (notifications.value.length > 20) notifications.value = notifications.value.slice(0, 20)
+    persist()
   }
 
   function markAllRead() {
-    notifications.value.forEach(n => n.read = true)
-    saveNotifs()
-  }
-
-  function markRead(id) {
-    const n = notifications.value.find(n => n.id === id)
-    if (n) n.read = false
-    saveNotifs()
+    notifications.value = notifications.value.map(n => ({ ...n, read: true }))
+    persist()
   }
 
   function clearNotifications() {
     notifications.value = []
-    saveNotifs()
+    persist()
   }
 
-  const unreadCount = ref(0)
-  function syncUnread() {
-    unreadCount.value = notifications.value.filter(n => !n.read).length
-  }
-  syncUnread()
-
-  return { notifications, unreadCount, addNotification, markAllRead, markRead, clearNotifications, syncUnread }
+  return { notifications, unreadCount, addNotification, markAllRead, clearNotifications }
 }

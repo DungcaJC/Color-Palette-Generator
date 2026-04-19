@@ -1,3 +1,5 @@
+// src/router/index.js
+
 import { createRouter, createWebHistory } from 'vue-router'
 import KeywordColorPalette from '../components/KeywordColorPalette.vue'
 import ColorPalette        from '../components/ColorPalette.vue'

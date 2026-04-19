@@ -1,12 +1,10 @@
+// useAuth.js - Composable for handling user authentication in the frontend
+
 import { ref } from 'vue'
 import axios from 'axios'
 
 const user = ref(JSON.parse(localStorage.getItem('user')) || null)
 const token = ref(localStorage.getItem('token') || null)
-
-if (token.value) {
-  axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
-}
 
 export function useAuth() {
 
@@ -26,8 +24,13 @@ export function useAuth() {
   }
 
   async function logout() {
-    await axios.post('/api/logout')
-    clearAuth()
+    try {
+      await axios.post('/api/logout')
+    } catch (e) {
+      // still clear even if request fails
+    } finally {
+      clearAuth()
+    }
   }
 
   function setAuth(data) {
@@ -35,7 +38,6 @@ export function useAuth() {
     token.value = data.token
     localStorage.setItem('user', JSON.stringify(data.user))
     localStorage.setItem('token', data.token)
-    axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
   }
 
   function clearAuth() {
@@ -43,7 +45,7 @@ export function useAuth() {
     token.value = null
     localStorage.removeItem('user')
     localStorage.removeItem('token')
-    delete axios.defaults.headers.common['Authorization']
+    localStorage.removeItem('guest_saved_palettes')
   }
 
   const isLoggedIn = () => !!token.value

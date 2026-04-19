@@ -170,10 +170,14 @@
                       <p class="text-sm text-white font-medium truncate">{{ user?.name }}</p>
                     </div>
                     <MenuItem v-slot="{ active }">
-                      <a href="#" :class="[active ? 'bg-white/5' : '', 'block px-4 py-2 text-sm text-gray-300']">Your Profile</a>
+                      <button @click="$emit('navigate', 'UserProfile')" :class="[active ? 'bg-white/5' : '', 'block w-full text-left px-4 py-2 text-sm text-gray-300']">
+                        Your Profile
+                      </button>
                     </MenuItem>
                     <MenuItem v-slot="{ active }">
-                      <a href="#" :class="[active ? 'bg-white/5' : '', 'block px-4 py-2 text-sm text-gray-300']">Settings</a>
+                      <button @click="$emit('navigate', 'UserSettings')" :class="[active ? 'bg-white/5' : '', 'block w-full text-left px-4 py-2 text-sm text-gray-300']">
+                        Settings
+                      </button>
                     </MenuItem>
                     <MenuItem v-slot="{ active }">
                       <button
@@ -232,7 +236,8 @@ import logo from '../assets/Logo-images/Palette-Logo.png'
 const emit = defineEmits(['navigate', 'logout', 'goToPalette'])
 
 const { user } = useAuth()
-const { notifications, unreadCount, markAllRead, clearNotifications, syncUnread } = useNotifications()
+// ✅ Removed syncUnread — it doesn't exist; unreadCount is a computed ref and stays in sync automatically
+const { notifications, unreadCount, markAllRead, clearNotifications } = useNotifications()
 
 const userInitial = computed(() => user.value?.name?.charAt(0).toUpperCase() || '?')
 
@@ -242,8 +247,7 @@ const bellRef = ref(null)
 function toggleNotif() {
   notifOpen.value = !notifOpen.value
   if (notifOpen.value) {
-    markAllRead()
-    syncUnread()
+    markAllRead() // ✅ This is enough — unreadCount updates automatically via computed
   }
 }
 
@@ -253,8 +257,7 @@ function goToPalette(notif) {
 }
 
 function clearAll() {
-  clearNotifications()
-  syncUnread()
+  clearNotifications() // ✅ Removed syncUnread() call
 }
 
 function formatDate(iso) {

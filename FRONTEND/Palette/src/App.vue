@@ -1,4 +1,5 @@
 <template>
+
   <!-- App.vue -->
 
   <div>
@@ -7,10 +8,12 @@
     </Transition>
 
     <TheNavbar
+      v-if="isLoggedIn()"
       @navigate="navigate"
       @logout="handleLogout"
       @goToPalette="handleGoToPalette"
     />
+
     <component
       :is="activeComp"
       :scrollToId="scrollToId"
@@ -33,9 +36,12 @@ import KeywordColorPalette from './components/KeywordColorPalette.vue'
 import ColorPalette        from './components/ColorPalette.vue'
 import CreatePalette       from './components/CreatePalette.vue'
 import SavePalette         from './components/SavePalette.vue'
+import UserProfile         from './components/UserProfile.vue'
+import UserSettings        from './components/UserSettings.vue'
 import './assets/style.css'
 
 const { isLoggedIn, logout } = useAuth()
+
 const isLoading = ref(true)
 const scrollToId = ref(null)
 
@@ -51,9 +57,12 @@ const compMap = {
   ColorPalette:        markRaw(ColorPalette),
   CreatePalette:       markRaw(CreatePalette),
   SavePalette:         markRaw(SavePalette),
+  UserProfile:         markRaw(UserProfile),
+  UserSettings:        markRaw(UserSettings),
 }
 
-const activeComp = shallowRef(compMap.Heroes)
+// If already logged in show Heroes, otherwise show Login
+const activeComp = shallowRef(isLoggedIn() ? compMap.Heroes : compMap.Login)
 
 function showLoading(callback) {
   isLoading.value = true
@@ -73,8 +82,12 @@ function handleLogin() {
 }
 
 async function handleLogout() {
-  await logout()
-  showLoading(() => { activeComp.value = compMap.Heroes })
+  try {
+    await logout()
+  } catch (e) {
+    // force logout even if API fails
+  }
+  showLoading(() => { activeComp.value = compMap.Login })
 }
 
 function handleGoToPalette(paletteId) {

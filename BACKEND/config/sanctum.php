@@ -1,5 +1,7 @@
 <?php
 
+// sanctum.php
+
 use Laravel\Sanctum\Sanctum;
 
 return [

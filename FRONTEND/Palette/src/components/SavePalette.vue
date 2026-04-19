@@ -1,6 +1,4 @@
 <template>
-  <!--SavePalette.vue-->
-
   <div class="min-h-screen bg-gray-50 p-8">
     <div class="max-w-5xl mx-auto flex flex-col gap-6">
 
@@ -12,7 +10,7 @@
         </div>
         <button
           v-if="palettes.length"
-          @click="clearAll"
+          @click="handleClearAll"
           class="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-4 py-2 rounded-full transition"
         >
           Clear all
@@ -20,7 +18,7 @@
       </div>
 
       <!-- Filter tabs -->
-      <div class="flex gap-2">
+      <div class="flex gap-2 flex-wrap">
         <button
           v-for="tab in tabs"
           :key="tab.value"
@@ -34,8 +32,13 @@
         </button>
       </div>
 
+      <!-- Loading -->
+      <div v-if="loading" class="flex justify-center py-24">
+        <div class="w-6 h-6 border-2 border-gray-300 border-t-gray-800 rounded-full animate-spin"></div>
+      </div>
+
       <!-- Empty state -->
-      <div v-if="filtered.length === 0" class="flex flex-col items-center justify-center py-24 text-gray-300 gap-3">
+      <div v-else-if="filtered.length === 0" class="flex flex-col items-center justify-center py-24 text-gray-300 gap-3">
         <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9.75h16.5M3.75 14.25h16.5M9 3.75v16.5M15 3.75v16.5"/>
         </svg>
@@ -43,12 +46,12 @@
       </div>
 
       <!-- Palette list -->
-      <div class="flex flex-col gap-4">
+      <div v-else class="flex flex-col gap-4">
         <div
           v-for="palette in filtered"
           :key="palette.id"
           :id="`palette-${palette.id}`"
-          class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100"
+          class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 transition"
           :class="scrollToId === palette.id ? 'ring-2 ring-indigo-400' : ''"
         >
           <!-- Color bar -->
@@ -76,12 +79,12 @@
                   :class="{
                     'bg-indigo-50 text-indigo-500': palette.source === 'created',
                     'bg-orange-50 text-orange-500': palette.source === 'image',
-                    'bg-teal-50 text-teal-500':   palette.source === 'keyword',
+                    'bg-teal-50 text-teal-500': palette.source === 'keyword',
                   }"
                 >
                   {{ sourceLabel(palette.source) }}
                 </span>
-                {{ formatDate(palette.createdAt) }}
+                {{ formatDate(palette.created_at || palette.createdAt) }}
               </p>
             </div>
 
@@ -110,31 +113,21 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
-import { useAuth } from '../composables/useAuth'
+import { ref, computed, onMounted, nextTick, toRef } from 'vue'
 import { usePaletteStore } from '../composables/usePaletteStore'
 
 const props = defineProps({ scrollToId: { type: String, default: null } })
 
-const { isLoggedIn } = useAuth()
-const { getAll, remove } = usePaletteStore()
+const { getAll, remove, clearAll } = usePaletteStore()
 
 const palettes = ref([])
 const activeTab = ref('all')
 const copied = ref('')
-const scrollToId = ref(props.scrollToId)
-
-const GUEST_KEY = 'guest_saved_palettes'
+const loading = ref(false)
+const scrollToId = toRef(props, 'scrollToId')
 
 onMounted(async () => {
-  if (isLoggedIn()) {
-    palettes.value = await getAll()
-  } else {
-    const stored = localStorage.getItem(GUEST_KEY)
-    palettes.value = stored ? JSON.parse(stored) : []
-  }
-
-  // Scroll to target palette if coming from notification
+  await loadPalettes()
   if (scrollToId.value) {
     await nextTick()
     setTimeout(() => {
@@ -143,6 +136,12 @@ onMounted(async () => {
     }, 100)
   }
 })
+
+async function loadPalettes() {
+  loading.value = true
+  palettes.value = await getAll()
+  loading.value = false
+}
 
 const tabs = [
   { label: 'All',     value: 'all'     },
@@ -168,25 +167,19 @@ function sourceLabel(source) {
 }
 
 function formatDate(iso) {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric'
+  })
 }
 
 async function deletePalette(id) {
-  if (isLoggedIn()) {
-    await remove(id)
-    palettes.value = await getAll()
-  } else {
-    palettes.value = palettes.value.filter(p => p.id !== id)
-    localStorage.setItem(GUEST_KEY, JSON.stringify(palettes.value))
-  }
+  await remove(id)
+  await loadPalettes()
 }
 
-function clearAll() {
-  if (isLoggedIn()) {
-    localStorage.removeItem('saved_palettes')
-  } else {
-    localStorage.removeItem(GUEST_KEY)
-  }
+async function handleClearAll() {
+  await clearAll()
   palettes.value = []
 }
 

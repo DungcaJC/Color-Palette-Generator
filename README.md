@@ -41,9 +41,9 @@ Note: Make sure to replace <repository-url> and <repository-name> with the actua
 
 Start the web: (use a Terminal for each command)
 BACKEND: Start
-C:\xampp\htdocs\Color-Palette-Generator\BACKEND> php artisan serve
+C:\laragon\www\Color-Palette-Generator\BACKEND> php artisan serve
 FRONTEND: Start
-C:\xampp\htdocs\Color-Palette-Generator\FRONTEND\Palette> npm run dev
+C:\laragon\www\Color-Palette-Generator\FRONTEND\Palette> npm run dev
 
 note: Make sure to have the backend server running before starting the frontend development server, as the frontend will need to communicate with the backend API to fetch and manage color palettes.
 note: The application will be accessible at http://localhost:3000, where you can generate, save, and manage your color palettes.
