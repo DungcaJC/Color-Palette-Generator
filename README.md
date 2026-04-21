@@ -19,7 +19,7 @@ Need to install:
 -Node.js (https://nodejs.org/) This is required for the frontend development server, You need a command like "npm install" to install the frontend dependencies and "npm run dev" to start the development server.
 -Composer (https://getcomposer.org/) This is required for the backend dependencies management, You need a command like "composer install" to install the Laravel framework dependencies.
 -PHP (https://www.php.net/) This is required to run the backend server, because we need a PHP 8.3 or higher version to run the Laravel framework.
--Xampp (https://www.apachefriends.org/index.html) This is required to run the backend server because we need a local server environment to run the Laravel framework.
+-Laragon (https://laragon.org/) This is where all the backend and frontend files are located, you can use it to manage your local development environment, including starting and stopping servers, managing databases, and more.
 To set up the project, follow these steps:
 1. Clone the repository:
     git clone <repository-url>
@@ -40,10 +40,12 @@ Note: Make sure to replace <repository-url> and <repository-name> with the actua
 -----## Start Application ##-----
 
 Start the web: (use a Terminal for each command)
-BACKEND: Start
-C:\laragon\www\Color-Palette-Generator\BACKEND> php artisan serve
-FRONTEND: Start
-C:\laragon\www\Color-Palette-Generator\FRONTEND\Palette> npm run dev
+
+Type this command to start the backend server:
+C:\laragon\www\Color-Palette-Generator> cd BACKEND | php artisan serve
+
+Type this command to start the frontend development server:
+C:\laragon\www\Color-Palette-Generator> cd FRONTEND/Palette | npm run dev
 
 note: Make sure to have the backend server running before starting the frontend development server, as the frontend will need to communicate with the backend API to fetch and manage color palettes.
 note: The application will be accessible at http://localhost:3000, where you can generate, save, and manage your color palettes.

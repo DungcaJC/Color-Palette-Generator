@@ -152,8 +152,14 @@
                 <MenuButton class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                   <span class="absolute -inset-1.5"></span>
                   <span class="sr-only">Open user menu</span>
-                  <div class="size-8 rounded-full bg-indigo-600 outline -outline-offset-1 outline-white/10 flex items-center justify-center text-white font-bold text-sm select-none">
-                    {{ userInitial }}
+                  <!-- Avatar with photo or initial -->
+                  <div class="size-8 rounded-full bg-indigo-600 outline -outline-offset-1 outline-white/10 flex items-center justify-center text-white font-bold text-sm select-none overflow-hidden">
+                    <img
+                      v-if="user?.avatar"
+                      :src="`http://localhost:8000/storage/${user.avatar}`"
+                      class="w-full h-full object-cover"
+                    />
+                    <span v-else>{{ userInitial }}</span>
                   </div>
                 </MenuButton>
                 <transition

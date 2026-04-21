@@ -46,6 +46,12 @@ const isLoading = ref(true)
 const scrollToId = ref(null)
 
 onMounted(() => {
+  const prefs = JSON.parse(localStorage.getItem('user_preferences') || '{}')
+  if (prefs.darkMode) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
   setTimeout(() => { isLoading.value = false }, 1500)
 })
 
@@ -101,6 +107,6 @@ function handleGoToPalette(paletteId) {
   user-select: none;
   caret-color: transparent;
 }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.6s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-leave-active { transition: opacity 0.6s ease; }
+.fade-leave-to { opacity: 0; }
 </style>

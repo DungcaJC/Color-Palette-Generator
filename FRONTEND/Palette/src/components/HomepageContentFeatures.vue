@@ -86,7 +86,6 @@ const features = [
   line-height: 0.9;
   letter-spacing: -0.02em;
   text-transform: uppercase;
-  color: #111;
   margin-bottom: 24px;
 }
 
@@ -94,7 +93,6 @@ const features = [
   font-family: 'DM Sans', sans-serif;
   font-size: 18px;
   line-height: 1.8;
-  color: #444;
   max-width: 480px;
   font-weight: 400;
 }
@@ -156,5 +154,31 @@ const features = [
   .feature-desc {
     font-size: 16px;
   }
+}
+
+/* Dark mode overrides */
+:global(.dark) .feature-title {
+  color: #ffffff;
+
+}
+
+:global(.dark) .feature-desc {
+  color: #c0c4ca;
+}
+
+:global(.dark) .feature {
+  border-bottom-color: #374151;
+}
+
+:global(.dark) .feature-visual {
+  background: #374151;
+}
+
+:global(.dark) .features-section {
+  background: #111827;
+}
+
+:global(.dark) .feature-number {
+  color: #ffffff;
 }
 </style>
