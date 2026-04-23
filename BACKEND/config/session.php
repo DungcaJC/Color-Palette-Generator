@@ -1,5 +1,5 @@
 <?php
-
+// config/session.php
 use Illuminate\Support\Str;
 
 return [

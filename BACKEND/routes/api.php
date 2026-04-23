@@ -51,6 +51,11 @@ Route::post('/login', function (Request $request) {
         return response()->json(['message' => 'Invalid credentials'], 401);
     }
 
+    // ← add this
+    if ($user->is_banned) {
+        return response()->json(['message' => 'Your account has been banned.'], 403);
+    }
+
     $token = $user->createToken('auth_token')->plainTextToken;
 
     return response()->json([
@@ -70,9 +75,12 @@ Route::get('/palette/search', function (Request $request) {
 });
 
 // Colormind proxy
-Route::post('/palette', function (Request $request) {
-    $response = \Illuminate\Support\Facades\Http::post('http://colormind.io/api/', $request->all());
-    return response()->json($response->json());
+Route::get('/palettes', function (Request $request) {
+    $query = \App\Models\Palette::with('user:id,name,email')->latest();
+    if ($request->query('source') && $request->query('source') !== 'all') {
+        $query->where('source', $request->query('source'));
+    }
+    return $query->paginate(20);
 });
 
 /*
@@ -166,6 +174,89 @@ Route::middleware('auth:sanctum')->group(function () {
         $user->tokens()->delete();
         $user->delete();
         return response()->json(['message' => 'Account deleted']);
+    });
+
+});
+
+// ─── Admin Routes ─────────────────────────────────────
+Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function () {
+
+    // Dashboard stats
+    Route::get('/stats', function () {
+        return response()->json([
+            'total_users'    => \App\Models\User::count(),
+            'total_palettes' => \App\Models\Palette::count(),
+            'by_source'      => [
+                'image'   => \App\Models\Palette::where('source', 'image')->count(),
+                'keyword' => \App\Models\Palette::where('source', 'keyword')->count(),
+                'created' => \App\Models\Palette::where('source', 'created')->count(),
+            ],
+            'new_users_this_week' => \App\Models\User::where('created_at', '>=', now()->subWeek())->count(),
+            'new_users_this_month' => \App\Models\User::where('created_at', '>=', now()->subMonth())->count(),
+        ]);
+    });
+
+    // Get all users
+    Route::get('/users', function (Request $request) {
+        $search = $request->query('search', '');
+        return \App\Models\User::when($search, fn($q) =>
+            $q->where('name', 'like', "%$search%")
+              ->orWhere('email', 'like', "%$search%")
+        )
+        ->withCount('palettes')
+        ->latest()
+        ->get();
+    });
+
+    // Get single user
+    Route::get('/users/{user}', function (\App\Models\User $user) {
+        return $user->loadCount('palettes')->load('palettes');
+    });
+
+    // Ban / Unban user (toggle)
+    Route::patch('/users/{user}/ban', function (Request $request, \App\Models\User $user) {
+        if ($user->isSuperAdmin()) {
+            return response()->json(['message' => 'Cannot ban a super admin.'], 403);
+        }
+        $user->is_banned = !$user->is_banned;
+        $user->save();
+        return response()->json(['message' => $user->is_banned ? 'User banned.' : 'User unbanned.', 'is_banned' => $user->is_banned]);
+    });
+
+    // Delete user
+    Route::delete('/users/{user}', function (Request $request, \App\Models\User $user) {
+        if ($user->isSuperAdmin()) {
+            return response()->json(['message' => 'Cannot delete a super admin.'], 403);
+        }
+        $user->tokens()->delete();
+        $user->delete();
+        return response()->json(['message' => 'User deleted.']);
+    });
+
+    // Get all palettes
+    Route::get('/palettes', function (Request $request) {
+        return \App\Models\Palette::with('user:id,name,email')
+            ->latest()
+            ->paginate(20);
+    });
+
+    // Delete any palette
+    Route::delete('/palettes/{palette}', function (\App\Models\Palette $palette) {
+        $palette->delete();
+        return response()->json(['message' => 'Palette deleted.']);
+    });
+
+});
+
+// ─── Super Admin Only ─────────────────────────────────
+Route::middleware(['auth:sanctum', 'isSuperAdmin'])->prefix('admin')->group(function () {
+
+    // Promote/demote user role
+    Route::patch('/users/{user}/role', function (Request $request, \App\Models\User $user) {
+        $request->validate(['role' => 'required|in:user,admin,superadmin']);
+        $user->role = $request->role;
+        $user->save();
+        return response()->json(['message' => 'Role updated.', 'user' => $user]);
     });
 
 });

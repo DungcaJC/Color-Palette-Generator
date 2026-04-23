@@ -1,6 +1,5 @@
 <template>
   <!-- Navbar.vue -->
-
   <div class="sticky top-0 z-50">
     <Disclosure as="nav" class="relative bg-[#0d1117] after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10" v-slot="{ open }">
       <div class="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
@@ -22,7 +21,7 @@
 
             <!-- Desktop nav -->
             <div class="hidden sm:ml-6 sm:block">
-              <ul class="flex items-center gap-4">
+              <ul class="flex items-center gap-1">
                 <li
                   @click="$emit('navigate', 'Heroes')"
                   class="text-gray-300 hover:bg-white/5 hover:text-white rounded-md px-3 py-2 text-sm font-medium cursor-pointer"
@@ -36,6 +35,65 @@
                   class="text-gray-300 hover:bg-white/5 hover:text-white rounded-md px-3 py-2 text-sm font-medium cursor-pointer"
                 >
                   {{ item.name }}
+                </li>
+
+                <!-- Admin dropdown in navbar -->
+                <li v-if="isAdmin()" class="relative" ref="adminMenuRef">
+                  <button
+                    @click="adminMenuOpen = !adminMenuOpen"
+                    class="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-md transition"
+                    :class="isSuperAdmin()
+                      ? 'text-red-400 hover:bg-red-500/10'
+                      : 'text-blue-400 hover:bg-blue-500/10'"
+                  >
+                    <span>{{ isSuperAdmin() ? '⚡ Super Admin' : '🛡 Admin' }}</span>
+                    <svg class="w-3 h-3 transition-transform" :class="adminMenuOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+
+                  <!-- Admin dropdown -->
+                  <transition
+                    enter-active-class="transition ease-out duration-100"
+                    enter-from-class="transform opacity-0 scale-95"
+                    enter-to-class="transform opacity-100 scale-100"
+                    leave-active-class="transition ease-in duration-75"
+                    leave-from-class="transform opacity-100 scale-100"
+                    leave-to-class="transform opacity-0 scale-95"
+                  >
+                    <div v-if="adminMenuOpen" class="absolute left-0 mt-2 w-52 origin-top-left rounded-xl bg-[#0d1117] border border-white/10 shadow-xl overflow-hidden z-50">
+                      <div class="px-4 py-2.5 border-b border-white/10">
+                        <p class="text-xs text-gray-400 uppercase tracking-widest">Admin Panel</p>
+                      </div>
+                      <button
+                        @click="navigateAdmin('AdminDashboard')"
+                        class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2"
+                      >
+                        <span>📊</span> Dashboard
+                      </button>
+                      <button
+                        @click="navigateAdmin('AdminUsers')"
+                        class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2"
+                      >
+                        <span>👥</span> Manage Users
+                      </button>
+                      <button
+                        @click="navigateAdmin('AdminPalettes')"
+                        class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2"
+                      >
+                        <span>🎨</span> Manage Palettes
+                      </button>
+                      <template v-if="isSuperAdmin()">
+                        <div class="border-t border-white/10 mt-1"></div>
+                        <button
+                          @click="navigateAdmin('AdminRoles')"
+                          class="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition flex items-center gap-2"
+                        >
+                          <span>⚡</span> Manage Roles
+                        </button>
+                      </template>
+                    </div>
+                  </transition>
                 </li>
               </ul>
             </div>
@@ -69,7 +127,6 @@
                   class="relative rounded-full p-1 text-gray-400 hover:text-white focus:outline-2 focus:outline-offset-2 focus:outline-indigo-500"
                 >
                   <BellIcon class="size-6" aria-hidden="true" />
-                  <!-- Red dot -->
                   <span
                     v-if="unreadCount > 0"
                     class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0d1117]"
@@ -89,19 +146,13 @@
                     v-if="notifOpen"
                     class="absolute right-0 mt-2 w-80 origin-top-right rounded-xl bg-[#0d1117] border border-white/10 shadow-xl overflow-hidden z-50"
                   >
-                    <!-- Header -->
                     <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
                       <span class="text-sm font-medium text-white">Notifications</span>
-                      <button
-                        v-if="notifications.length"
-                        @click="clearAll"
-                        class="text-xs text-gray-400 hover:text-white transition"
-                      >
+                      <button v-if="notifications.length" @click="clearAll" class="text-xs text-gray-400 hover:text-white transition">
                         Clear all
                       </button>
                     </div>
 
-                    <!-- List -->
                     <div class="max-h-80 overflow-y-auto">
                       <p v-if="!notifications.length" class="text-xs text-gray-500 text-center py-8">
                         No notifications yet
@@ -113,30 +164,20 @@
                         class="flex items-start gap-3 px-4 py-3 cursor-pointer border-b border-white/5 transition hover:bg-white/5"
                         :class="!notif.read ? 'bg-indigo-950/40' : ''"
                       >
-                        <!-- Color preview dots -->
                         <div class="flex gap-0.5 mt-1 shrink-0">
                           <div
-                            v-for="(c, i) in notif.colors"
-                            :key="i"
+                            v-for="(c, i) in notif.colors" :key="i"
                             class="w-3 h-3 rounded-full border border-white/10"
                             :style="{ backgroundColor: c }"
                           ></div>
                         </div>
-
                         <div class="flex-1 min-w-0">
-                          <!-- Unread dot -->
                           <div class="flex items-center gap-1.5">
-                            <span
-                              v-if="!notif.read"
-                              class="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0"
-                            ></span>
-                            <p class="text-sm text-white truncate font-medium">
-                              {{ notif.name }}
-                            </p>
+                            <span v-if="!notif.read" class="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0"></span>
+                            <p class="text-sm text-white truncate font-medium">{{ notif.name }}</p>
                           </div>
                           <p class="text-xs text-gray-400 mt-0.5">has been saved</p>
                         </div>
-
                         <div class="text-right shrink-0">
                           <p class="text-xs text-gray-500">{{ formatDate(notif.date) }}</p>
                           <p class="text-xs text-gray-500">{{ formatTime(notif.date) }}</p>
@@ -152,16 +193,21 @@
                 <MenuButton class="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
                   <span class="absolute -inset-1.5"></span>
                   <span class="sr-only">Open user menu</span>
-                  <!-- Avatar with photo or initial -->
-                  <div class="size-8 rounded-full bg-indigo-600 outline -outline-offset-1 outline-white/10 flex items-center justify-center text-white font-bold text-sm select-none overflow-hidden">
-                    <img
-                      v-if="user?.avatar"
-                      :src="`http://localhost:8000/storage/${user.avatar}`"
-                      class="w-full h-full object-cover"
-                    />
-                    <span v-else>{{ userInitial }}</span>
+
+                  <!-- Avatar with role dot in top right -->
+                  <div class="relative">
+                    <div class="size-8 rounded-full bg-indigo-600 outline -outline-offset-1 outline-white/10 flex items-center justify-center text-white font-bold text-sm select-none overflow-hidden">
+                      <img v-if="user?.avatar" :src="`http://localhost:8000/storage/${user.avatar}`" class="w-full h-full object-cover" />
+                      <span v-else>{{ userInitial }}</span>
+                    </div>
+                    <!-- Role dot top right of avatar -->
+                    <span
+                      class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0d1117]"
+                      :class="roleDotClass"
+                    ></span>
                   </div>
                 </MenuButton>
+
                 <transition
                   enter-active-class="transition ease-out duration-100"
                   enter-from-class="transform opacity-0 scale-95"
@@ -170,11 +216,19 @@
                   leave-from-class="transform scale-100"
                   leave-to-class="transform opacity-0 scale-95"
                 >
-                  <MenuItems class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-gray-800 py-1 outline -outline-offset-1 outline-white/10">
-                    <div class="px-4 py-2 border-b border-white/10">
+                  <MenuItems class="absolute right-0 z-10 mt-2 w-52 origin-top-right rounded-xl bg-gray-800 py-1 outline -outline-offset-1 outline-white/10">
+
+                    <!-- User info + role badge -->
+                    <div class="px-4 py-3 border-b border-white/10">
                       <p class="text-xs text-gray-400">Signed in as</p>
                       <p class="text-sm text-white font-medium truncate">{{ user?.name }}</p>
+                      <!-- Role badge -->
+                      <div class="flex items-center gap-1.5 mt-1.5">
+                        <span class="w-2 h-2 rounded-full" :class="roleDotClass"></span>
+                        <span class="text-xs font-medium" :class="roleLabelClass">{{ roleLabel }}</span>
+                      </div>
                     </div>
+
                     <MenuItem v-slot="{ active }">
                       <button @click="$emit('navigate', 'UserProfile')" :class="[active ? 'bg-white/5' : '', 'block w-full text-left px-4 py-2 text-sm text-gray-300']">
                         Your Profile
@@ -185,6 +239,22 @@
                         Settings
                       </button>
                     </MenuItem>
+
+                    <!-- Admin Panel shortcut in dropdown -->
+                    <template v-if="isAdmin()">
+                      <div class="border-t border-white/10 my-1"></div>
+                      <MenuItem v-slot="{ active }">
+                        <button
+                          @click="$emit('navigate', 'AdminDashboard')"
+                          :class="[active ? 'bg-white/5' : '', 'block w-full text-left px-4 py-2 text-sm']"
+                          :style="isSuperAdmin() ? 'color: #f87171' : 'color: #60a5fa'"
+                        >
+                          {{ isSuperAdmin() ? '⚡ Super Admin Panel' : '🛡 Admin Panel' }}
+                        </button>
+                      </MenuItem>
+                    </template>
+
+                    <div class="border-t border-white/10 my-1"></div>
                     <MenuItem v-slot="{ active }">
                       <button
                         @click="$emit('logout')"
@@ -215,6 +285,17 @@
             class="w-full text-left text-gray-300 hover:bg-white/5 hover:text-white block rounded-md px-3 py-2 text-base font-medium">
             {{ item.name }}
           </DisclosureButton>
+
+          <!-- Mobile admin links -->
+          <template v-if="isAdmin()">
+            <div class="border-t border-white/10 my-1"></div>
+            <DisclosureButton as="button" @click="$emit('navigate', 'AdminDashboard')"
+              class="w-full text-left block rounded-md px-3 py-2 text-base font-medium"
+              :class="isSuperAdmin() ? 'text-red-400' : 'text-blue-400'">
+              {{ isSuperAdmin() ? '⚡ Super Admin' : '🛡 Admin Panel' }}
+            </DisclosureButton>
+          </template>
+
           <template v-if="!user">
             <DisclosureButton as="button" @click="$emit('navigate', 'Login')"
               class="w-full text-left text-gray-300 hover:bg-white/5 hover:text-white block rounded-md px-3 py-2 text-base font-medium">
@@ -241,20 +322,48 @@ import logo from '../assets/Logo-images/Palette-Logo.png'
 
 const emit = defineEmits(['navigate', 'logout', 'goToPalette'])
 
-const { user } = useAuth()
-// ✅ Removed syncUnread — it doesn't exist; unreadCount is a computed ref and stays in sync automatically
+const { user, isAdmin, isSuperAdmin } = useAuth()
 const { notifications, unreadCount, markAllRead, clearNotifications } = useNotifications()
 
 const userInitial = computed(() => user.value?.name?.charAt(0).toUpperCase() || '?')
 
+// Role dot color on avatar
+const roleDotClass = computed(() => {
+  if (isSuperAdmin()) return 'bg-red-500'
+  if (isAdmin())      return 'bg-blue-500'
+  return 'bg-green-500'
+})
+
+// Role label color in dropdown
+const roleLabelClass = computed(() => {
+  if (isSuperAdmin()) return 'text-red-400'
+  if (isAdmin())      return 'text-blue-400'
+  return 'text-green-400'
+})
+
+// Role text
+const roleLabel = computed(() => {
+  if (isSuperAdmin()) return 'Super Admin'
+  if (isAdmin())      return 'Admin'
+  return 'User'
+})
+
+// Admin dropdown in navbar
+const adminMenuOpen = ref(false)
+const adminMenuRef = ref(null)
+
+function navigateAdmin(comp) {
+  adminMenuOpen.value = false
+  emit('navigate', comp)
+}
+
+// Notification
 const notifOpen = ref(false)
 const bellRef = ref(null)
 
 function toggleNotif() {
   notifOpen.value = !notifOpen.value
-  if (notifOpen.value) {
-    markAllRead() // ✅ This is enough — unreadCount updates automatically via computed
-  }
+  if (notifOpen.value) markAllRead()
 }
 
 function goToPalette(notif) {
@@ -262,9 +371,7 @@ function goToPalette(notif) {
   emit('goToPalette', notif.paletteId)
 }
 
-function clearAll() {
-  clearNotifications() // ✅ Removed syncUnread() call
-}
+function clearAll() { clearNotifications() }
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -274,12 +381,12 @@ function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 }
 
-// Close on outside click
+// Close dropdowns on outside click
 function onClickOutside(e) {
-  if (bellRef.value && !bellRef.value.contains(e.target)) {
-    notifOpen.value = false
-  }
+  if (bellRef.value && !bellRef.value.contains(e.target)) notifOpen.value = false
+  if (adminMenuRef.value && !adminMenuRef.value.contains(e.target)) adminMenuOpen.value = false
 }
+
 onMounted(() => document.addEventListener('mousedown', onClickOutside))
 onBeforeUnmount(() => document.removeEventListener('mousedown', onClickOutside))
 

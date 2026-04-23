@@ -1,4 +1,4 @@
-// useAuth.js - Composable for handling user authentication in the frontend
+// src/composables/useAuth.js
 
 import { ref } from 'vue'
 import axios from 'axios'
@@ -48,7 +48,20 @@ export function useAuth() {
     localStorage.removeItem('guest_saved_palettes')
   }
 
-  const isLoggedIn = () => !!token.value
+  async function refreshUser() {
+    try {
+      const { data } = await axios.get('/api/me')
+      user.value = data
+      localStorage.setItem('user', JSON.stringify(data))
+    } catch (e) {
+      console.error('Failed to refresh user:', e)
+    }
+  }
 
-  return { user, token, isLoggedIn, register, login, logout }
+  const isLoggedIn    = () => !!token.value
+  const isAdmin       = () => ['admin', 'superadmin'].includes(user.value?.role)
+  const isSuperAdmin  = () => user.value?.role === 'superadmin'
+
+  return { user, token, isLoggedIn, isAdmin, isSuperAdmin, register, login, logout, refreshUser }
+
 }

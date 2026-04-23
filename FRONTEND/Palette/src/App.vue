@@ -38,20 +38,24 @@ import CreatePalette       from './components/CreatePalette.vue'
 import SavePalette         from './components/SavePalette.vue'
 import UserProfile         from './components/UserProfile.vue'
 import UserSettings        from './components/UserSettings.vue'
+import AdminDashboard      from './components/AdminDashboard.vue'
+import AdminUsers          from './components/AdminUsers.vue'
+import AdminPalettes       from './components/AdminPalettes.vue'
+import AdminRoles          from './components/AdminRoles.vue'
+
 import './assets/style.css'
 
-const { isLoggedIn, logout } = useAuth()
+const { isLoggedIn, logout, refreshUser } = useAuth()
 
 const isLoading = ref(true)
 const scrollToId = ref(null)
 
-onMounted(() => {
+onMounted(async () => {
   const prefs = JSON.parse(localStorage.getItem('user_preferences') || '{}')
-  if (prefs.darkMode) {
-    document.documentElement.classList.add('dark')
-  } else {
-    document.documentElement.classList.remove('dark')
-  }
+  if (prefs.darkMode) document.documentElement.classList.add('dark')
+
+  if (isLoggedIn()) await refreshUser()
+  
   setTimeout(() => { isLoading.value = false }, 1500)
 })
 
@@ -65,6 +69,10 @@ const compMap = {
   SavePalette:         markRaw(SavePalette),
   UserProfile:         markRaw(UserProfile),
   UserSettings:        markRaw(UserSettings),
+  AdminDashboard:      markRaw(AdminDashboard),
+  AdminUsers:          markRaw(AdminUsers),
+  AdminPalettes:       markRaw(AdminPalettes),
+  AdminRoles:          markRaw(AdminRoles),
 }
 
 // If already logged in show Heroes, otherwise show Login
