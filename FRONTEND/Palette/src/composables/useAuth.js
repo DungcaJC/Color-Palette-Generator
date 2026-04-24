@@ -2,6 +2,7 @@
 
 import { ref } from 'vue'
 import axios from 'axios'
+import { useNotifications } from './useNotifications'
 
 const user = ref(JSON.parse(localStorage.getItem('user')) || null)
 const token = ref(localStorage.getItem('token') || null)
@@ -38,6 +39,10 @@ export function useAuth() {
     token.value = data.token
     localStorage.setItem('user', JSON.stringify(data.user))
     localStorage.setItem('token', data.token)
+
+    // ← reload notifications for this specific user
+    const { reloadForUser } = useNotifications()
+    reloadForUser()
   }
 
   function clearAuth() {
@@ -46,6 +51,10 @@ export function useAuth() {
     localStorage.removeItem('user')
     localStorage.removeItem('token')
     localStorage.removeItem('guest_saved_palettes')
+
+    // ← clear notifications display on logout
+    const { reloadForUser } = useNotifications()
+    reloadForUser()
   }
 
   async function refreshUser() {

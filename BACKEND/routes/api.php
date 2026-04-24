@@ -74,13 +74,10 @@ Route::get('/palette/search', function (Request $request) {
     return response()->json($response->json());
 });
 
-// Colormind proxy
-Route::get('/palettes', function (Request $request) {
-    $query = \App\Models\Palette::with('user:id,name,email')->latest();
-    if ($request->query('source') && $request->query('source') !== 'all') {
-        $query->where('source', $request->query('source'));
-    }
-    return $query->paginate(20);
+// Colormind proxy (this is the real one)
+Route::post('/palette', function (Request $request) {
+    $response = \Illuminate\Support\Facades\Http::post('http://colormind.io/api/', $request->all());
+    return response()->json($response->json());
 });
 
 /*
@@ -176,6 +173,9 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['message' => 'Account deleted']);
     });
 
+    Route::get('/me', function (Request $request) {
+        return response()->json($request->user());
+    });
 });
 
 // ─── Admin Routes ─────────────────────────────────────
@@ -195,6 +195,15 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function 
             'new_users_this_month' => \App\Models\User::where('created_at', '>=', now()->subMonth())->count(),
         ]);
     });
+
+    // Debug route to check auth and roles
+    Route::get('/debug-me', function (Request $request) {
+        return response()->json([
+            'user' => $request->user(),
+            'role' => $request->user()?->role,
+            'isAdmin' => $request->user()?->isAdmin(),
+        ]);
+    })->middleware('auth:sanctum');
 
     // Get all users
     Route::get('/users', function (Request $request) {
@@ -234,10 +243,13 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function 
     });
 
     // Get all palettes
+    // Inside admin group — replace existing palettes route
     Route::get('/palettes', function (Request $request) {
-        return \App\Models\Palette::with('user:id,name,email')
-            ->latest()
-            ->paginate(20);
+        $query = \App\Models\Palette::with('user:id,name,email')->latest();
+        if ($request->query('source') && $request->query('source') !== 'all') {
+            $query->where('source', $request->query('source'));
+        }
+        return $query->paginate(20);
     });
 
     // Delete any palette

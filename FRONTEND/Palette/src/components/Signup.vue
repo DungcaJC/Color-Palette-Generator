@@ -1,6 +1,5 @@
 <template>
   <!--Signup.vue-->
-
   <div class="min-h-screen bg-gray-50 flex items-center justify-center p-8">
     <div class="bg-white rounded-3xl shadow-md p-8 w-full max-w-md flex flex-col gap-5">
 
