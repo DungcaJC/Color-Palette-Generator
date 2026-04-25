@@ -45,7 +45,7 @@
       <!-- CTA buttons -->
       <div class="flex items-center gap-4 relative z-10">
         <button id="generate-btn" class="text-white text-sm font-medium px-5 py-2.5 rounded-md">
-          <a href="#Generate-image">Generate</a>
+          <a href="#">Generate</a>
         </button>
         <button class="text-slate-300 hover:text-white transition-colors text-sm flex items-center gap-1">
           Learn more <span>→</span>

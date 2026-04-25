@@ -94,9 +94,4 @@ async function submit() {
 </script>
 
 <!-- Blinking line in typing show -->
-<style>
-  input {
-    caret-color: black;
-    color: black;
-  }
-</style>
+

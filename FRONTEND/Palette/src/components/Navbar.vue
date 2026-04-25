@@ -37,6 +37,37 @@
                   {{ item.name }}
                 </li>
 
+                <!-- Save dropdown -->
+                <li class="relative" ref="saveMenuRef">
+                  <button
+                    @click="saveMenuOpen = !saveMenuOpen"
+                    class="flex items-center gap-1 text-gray-300 hover:bg-white/5 hover:text-white rounded-md px-3 py-2 text-sm font-medium cursor-pointer"
+                  >
+                    Save
+                    <svg class="w-3 h-3 transition-transform" :class="saveMenuOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+
+                  <transition
+                    enter-active-class="transition ease-out duration-100"
+                    enter-from-class="transform opacity-0 scale-95"
+                    enter-to-class="transform opacity-100 scale-100"
+                    leave-active-class="transition ease-in duration-75"
+                    leave-from-class="transform opacity-100 scale-100"
+                    leave-to-class="transform opacity-0 scale-95"
+                  >
+                    <div v-if="saveMenuOpen" class="absolute left-0 mt-2 w-44 origin-top-left rounded-xl bg-[#0d1117] border border-white/10 shadow-xl overflow-hidden z-50">
+                      <button @click="navigateSave('SavePalette')" class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2">
+                        <span>🎨</span> My Palettes
+                      </button>
+                      <button @click="navigateSave('SavePost')" class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2">
+                        <span>🔖</span> Saved Posts
+                      </button>
+                    </div>
+                  </transition>
+                </li>
+
                 <!-- Admin dropdown in navbar -->
                 <li v-if="isAdmin()" class="relative" ref="adminMenuRef">
                   <button
@@ -52,7 +83,6 @@
                     </svg>
                   </button>
 
-                  <!-- Admin dropdown -->
                   <transition
                     enter-active-class="transition ease-out duration-100"
                     enter-from-class="transform opacity-0 scale-95"
@@ -65,30 +95,21 @@
                       <div class="px-4 py-2.5 border-b border-white/10">
                         <p class="text-xs text-gray-400 uppercase tracking-widest">Admin Panel</p>
                       </div>
-                      <button
-                        @click="navigateAdmin('AdminDashboard')"
-                        class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2"
-                      >
+                      <button @click="navigateAdmin('AdminDashboard')" class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2">
                         <span>📊</span> Dashboard
                       </button>
-                      <button
-                        @click="navigateAdmin('AdminUsers')"
-                        class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2"
-                      >
+                      <button @click="navigateAdmin('AdminUsers')" class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2">
                         <span>👥</span> Manage Users
                       </button>
-                      <button
-                        @click="navigateAdmin('AdminPalettes')"
-                        class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2"
-                      >
+                      <button @click="navigateAdmin('AdminPalettes')" class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2">
                         <span>🎨</span> Manage Palettes
+                      </button>
+                      <button @click="navigateAdmin('AdminReports')" class="w-full text-left px-4 py-2.5 text-sm text-gray-300 hover:bg-white/5 hover:text-white transition flex items-center gap-2">
+                        <span>🚨</span> Reports
                       </button>
                       <template v-if="isSuperAdmin()">
                         <div class="border-t border-white/10 mt-1"></div>
-                        <button
-                          @click="navigateAdmin('AdminRoles')"
-                          class="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition flex items-center gap-2"
-                        >
+                        <button @click="navigateAdmin('AdminRoles')" class="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition flex items-center gap-2">
                           <span>⚡</span> Manage Roles
                         </button>
                       </template>
@@ -148,15 +169,36 @@
                   >
                     <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
                       <span class="text-sm font-medium text-white">Notifications</span>
-                      <button v-if="notifications.length" @click="clearAll" class="text-xs text-gray-400 hover:text-white transition">
+                      <button v-if="notifications.length || serverNotifications.length" @click="clearAll" class="text-xs text-gray-400 hover:text-white transition">
                         Clear all
                       </button>
                     </div>
 
-                    <div class="max-h-80 overflow-y-auto">
-                      <p v-if="!notifications.length" class="text-xs text-gray-500 text-center py-8">
+                    <div class="max-h-80 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      <p v-if="!notifications.length && !serverNotifications.length" class="text-xs text-gray-500 text-center py-8">
                         No notifications yet
                       </p>
+
+                      <!-- Server notifications (warnings, role changes) -->
+                      <div
+                        v-for="notif in serverNotifications"
+                        :key="`server-${notif.id}`"
+                        @click="openServerNotif(notif)"
+                        class="flex items-start gap-3 px-4 py-3 cursor-pointer border-b border-white/5 transition hover:bg-white/5"
+                        :class="!notif.read_at ? 'bg-indigo-950/40' : ''"
+                      >
+                        <span class="text-lg shrink-0 mt-0.5">{{ notif.type === 'warning' ? '⚠️' : '🎉' }}</span>
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center gap-1.5">
+                            <span v-if="!notif.read_at" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
+                            <p class="text-sm text-white truncate font-medium">{{ notif.title }}</p>
+                          </div>
+                          <p class="text-xs text-gray-400 mt-0.5 truncate">{{ notif.message }}</p>
+                        </div>
+                        <p class="text-xs text-gray-500 shrink-0">{{ formatDate(notif.created_at) }}</p>
+                      </div>
+
+                      <!-- Local palette notifications -->
                       <div
                         v-for="notif in notifications"
                         :key="notif.id"
@@ -165,11 +207,7 @@
                         :class="!notif.read ? 'bg-indigo-950/40' : ''"
                       >
                         <div class="flex gap-0.5 mt-1 shrink-0">
-                          <div
-                            v-for="(c, i) in notif.colors" :key="i"
-                            class="w-3 h-3 rounded-full border border-white/10"
-                            :style="{ backgroundColor: c }"
-                          ></div>
+                          <div v-for="(c, i) in notif.colors" :key="i" class="w-3 h-3 rounded-full border border-white/10" :style="{ backgroundColor: c }"></div>
                         </div>
                         <div class="flex-1 min-w-0">
                           <div class="flex items-center gap-1.5">
@@ -194,13 +232,11 @@
                   <span class="absolute -inset-1.5"></span>
                   <span class="sr-only">Open user menu</span>
 
-                  <!-- Avatar with role dot in top right -->
                   <div class="relative">
                     <div class="size-8 rounded-full bg-indigo-600 outline -outline-offset-1 outline-white/10 flex items-center justify-center text-white font-bold text-sm select-none overflow-hidden">
                       <img v-if="user?.avatar" :src="`http://localhost:8000/storage/${user.avatar}`" class="w-full h-full object-cover" />
                       <span v-else>{{ userInitial }}</span>
                     </div>
-                    <!-- Role dot top right of avatar -->
                     <span
                       class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#0d1117]"
                       :class="roleDotClass"
@@ -217,12 +253,9 @@
                   leave-to-class="transform opacity-0 scale-95"
                 >
                   <MenuItems class="absolute right-0 z-10 mt-2 w-52 origin-top-right rounded-xl bg-gray-800 py-1 outline -outline-offset-1 outline-white/10">
-
-                    <!-- User info + role badge -->
                     <div class="px-4 py-3 border-b border-white/10">
                       <p class="text-xs text-gray-400">Signed in as</p>
                       <p class="text-sm text-white font-medium truncate">{{ user?.name }}</p>
-                      <!-- Role badge -->
                       <div class="flex items-center gap-1.5 mt-1.5">
                         <span class="w-2 h-2 rounded-full" :class="roleDotClass"></span>
                         <span class="text-xs font-medium" :class="roleLabelClass">{{ roleLabel }}</span>
@@ -240,7 +273,6 @@
                       </button>
                     </MenuItem>
 
-                    <!-- Admin Panel shortcut in dropdown -->
                     <template v-if="isAdmin()">
                       <div class="border-t border-white/10 my-1"></div>
                       <MenuItem v-slot="{ active }">
@@ -286,7 +318,6 @@
             {{ item.name }}
           </DisclosureButton>
 
-          <!-- Mobile admin links -->
           <template v-if="isAdmin()">
             <div class="border-t border-white/10 my-1"></div>
             <DisclosureButton as="button" @click="$emit('navigate', 'AdminDashboard')"
@@ -310,6 +341,51 @@
       </DisclosurePanel>
     </Disclosure>
   </div>
+
+  <!-- Server Notification Modal (Warning / Role Change) -->
+  <div v-if="activeServerNotif" class="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4" @click.self="activeServerNotif = null">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
+
+      <!-- Warning notification -->
+      <template v-if="activeServerNotif.type === 'warning'">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">⚠️</span>
+          <div>
+            <h2 class="text-base font-semibold text-gray-800 dark:text-white">{{ activeServerNotif.title }}</h2>
+            <p class="text-xs text-gray-400 mt-0.5">{{ formatDateLong(activeServerNotif.created_at) }}</p>
+          </div>
+        </div>
+
+        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex flex-col gap-2">
+          <p class="text-sm font-medium text-amber-700 dark:text-amber-400">
+            Reason: {{ topicLabel(activeServerNotif.data?.report_category) }}
+          </p>
+          <p class="text-sm text-amber-600 dark:text-amber-500">{{ activeServerNotif.data?.auto_caption }}</p>
+          <p v-if="activeServerNotif.data?.admin_text" class="text-sm text-gray-600 dark:text-gray-300 italic border-t border-amber-200 dark:border-amber-800 pt-2 mt-1">"{{ activeServerNotif.data.admin_text }}"</p>
+        </div>
+
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 flex items-center gap-2">
+          <span>⏰</span>
+          <p class="text-xs text-red-600 dark:text-red-400">
+            Your account will be banned on <strong>{{ formatDateLong(activeServerNotif.data?.expires_at) }}</strong> if this issue is not resolved ({{ activeServerNotif.data?.expires_days }} day{{ activeServerNotif.data?.expires_days > 1 ? 's' : '' }}).
+          </p>
+        </div>
+      </template>
+
+      <!-- Role change notification -->
+      <template v-else-if="activeServerNotif.type === 'role_change'">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🎉</span>
+          <h2 class="text-base font-semibold text-gray-800 dark:text-white">{{ activeServerNotif.title }}</h2>
+        </div>
+        <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4">
+          <p class="text-sm text-indigo-700 dark:text-indigo-400">{{ activeServerNotif.message }}</p>
+        </div>
+      </template>
+
+      <button @click="activeServerNotif = null" class="w-full py-2.5 rounded-xl bg-gray-800 text-white text-sm font-medium hover:bg-gray-700 transition">Got it</button>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -323,7 +399,7 @@ import logo from '../assets/Logo-images/Palette-Logo.png'
 const emit = defineEmits(['navigate', 'logout', 'goToPalette'])
 
 const { user, isAdmin, isSuperAdmin } = useAuth()
-const { notifications, unreadCount, markAllRead, clearNotifications } = useNotifications()
+const { notifications, serverNotifications, unreadCount, markAllRead, clearNotifications, loadServerNotifications } = useNotifications()
 
 const userInitial = computed(() => user.value?.name?.charAt(0).toUpperCase() || '?')
 
@@ -357,13 +433,30 @@ function navigateAdmin(comp) {
   emit('navigate', comp)
 }
 
+const saveMenuOpen = ref(false)
+const saveMenuRef = ref(null)
+
+function navigateSave(comp) {
+  saveMenuOpen.value = false
+  emit('navigate', comp)
+}
+
 // Notification
 const notifOpen = ref(false)
 const bellRef = ref(null)
 
+// Server notification modal
+const activeServerNotif = ref(null)
+
 function toggleNotif() {
   notifOpen.value = !notifOpen.value
   if (notifOpen.value) markAllRead()
+}
+
+function openServerNotif(notif) {
+  activeServerNotif.value = notif
+  markServerRead(notif.id)
+  notifOpen.value = false
 }
 
 function goToPalette(notif) {
@@ -381,19 +474,40 @@ function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 }
 
+function formatDateLong(iso) {
+  if (!iso) return 'N/A'
+  return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+}
+
+function topicLabel(topic) {
+  const map = {
+    spam: '📢 Spam',
+    inappropriate: '🚫 Inappropriate',
+    harassment: '😡 Harassment',
+    copyright: '©️ Copyright',
+    other: '❓ Other'
+  }
+  return map[topic] || topic
+}
+
 // Close dropdowns on outside click
 function onClickOutside(e) {
   if (bellRef.value && !bellRef.value.contains(e.target)) notifOpen.value = false
   if (adminMenuRef.value && !adminMenuRef.value.contains(e.target)) adminMenuOpen.value = false
+  if (saveMenuRef.value && !saveMenuRef.value.contains(e.target)) saveMenuOpen.value = false
 }
 
-onMounted(() => document.addEventListener('mousedown', onClickOutside))
+onMounted(() => {
+  loadServerNotifications()
+  document.addEventListener('mousedown', onClickOutside)
+})
+
 onBeforeUnmount(() => document.removeEventListener('mousedown', onClickOutside))
 
 const navigation = [
   { name: 'Keyword',        comp: 'KeywordColorPalette' },
   { name: 'Generate Image', comp: 'ColorPalette'        },
   { name: 'Create Palette', comp: 'CreatePalette'       },
-  { name: 'Save Palette',   comp: 'SavePalette'         },
+  { name: 'Community',      comp: 'Community'           },
 ]
 </script>

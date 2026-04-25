@@ -42,7 +42,9 @@ import AdminDashboard      from './components/AdminDashboard.vue'
 import AdminUsers          from './components/AdminUsers.vue'
 import AdminPalettes       from './components/AdminPalettes.vue'
 import AdminRoles          from './components/AdminRoles.vue'
-
+import Community           from './components/Community.vue'
+import AdminReports        from './components/AdminReports.vue'
+import SavePost            from './components/SavePost.vue'
 import './assets/style.css'
 
 const { isLoggedIn, logout, refreshUser } = useAuth()
@@ -73,6 +75,9 @@ const compMap = {
   AdminUsers:          markRaw(AdminUsers),
   AdminPalettes:       markRaw(AdminPalettes),
   AdminRoles:          markRaw(AdminRoles),
+  Community:           markRaw(Community),
+  AdminReports:        markRaw(AdminReports),
+  SavePost:            markRaw(SavePost),
 }
 
 // If already logged in show Heroes, otherwise show Login
@@ -113,8 +118,25 @@ function handleGoToPalette(paletteId) {
 <style>
 * {
   user-select: none;
-  caret-color: transparent;
 }
+
+input, textarea, select, [contenteditable] {
+  user-select: text;
+  caret-color: auto;
+}
+
+:global(.dark) input,
+:global(.dark) textarea,
+:global(.dark) select {
+  color: #ffffff;
+  caret-color: #ffffff;
+}
+
+:global(.dark) input::placeholder,
+:global(.dark) textarea::placeholder {
+  color: #aaaaaa;
+}
+
 .fade-leave-active { transition: opacity 0.6s ease; }
 .fade-leave-to { opacity: 0; }
 </style>

@@ -34,3 +34,40 @@ CREATE TABLE personal_access_tokens (
   created_at TIMESTAMP NULL,
   updated_at TIMESTAMP NULL
 );
+
+CREATE TABLE posts (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  image VARCHAR(255) NOT NULL,
+  caption TEXT NULL,
+  colors JSON NULL,
+  category VARCHAR(100) DEFAULT 'Other',
+  likes_count INT DEFAULT 0,
+  created_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE post_likes (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  post_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NULL,
+  UNIQUE KEY unique_like (post_id, user_id),
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE reports (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  post_id BIGINT UNSIGNED NOT NULL,
+  reporter_id BIGINT UNSIGNED NOT NULL,
+  topic ENUM('spam', 'inappropriate', 'harassment', 'copyright', 'other') NOT NULL,
+  details TEXT NULL,
+  status ENUM('pending', 'reviewed', 'dismissed') DEFAULT 'pending',
+  created_at TIMESTAMP NULL,
+  updated_at TIMESTAMP NULL,
+  FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+  FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE CASCADE
+);

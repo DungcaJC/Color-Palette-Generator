@@ -14,18 +14,21 @@
 
     <div class="max-w-6xl mx-auto px-8 -mt-12 pb-16 flex flex-col gap-4">
 
-      <!-- Filter tabs -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex gap-2 flex-wrap">
-        <button
-          v-for="tab in tabs" :key="tab.value"
-          @click="activeTab = tab.value; fetchPalettes()"
-          class="px-4 py-2 rounded-full text-sm font-medium border transition"
-          :class="activeTab === tab.value
-            ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white'
-            : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:border-gray-400'"
-        >
-          {{ tab.label }}
-        </button>
+      <!-- Replace the existing filter tabs div with this -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex gap-3 flex-wrap">
+        <input
+          v-model="search"
+          type="text"
+          placeholder="Search by palette name or user..."
+          class="flex-1 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-400 transition min-w-48"
+          @input="fetchPalettes"
+        />
+        <div class="flex gap-2 flex-wrap">
+          <button v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value; fetchPalettes()"
+            class="px-4 py-2 rounded-full text-sm font-medium border transition"
+            :class="activeTab === tab.value ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white' : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:border-gray-400'"
+          >{{ tab.label }}</button>
+        </div>
       </div>
 
       <!-- Loading -->
@@ -140,6 +143,7 @@ const deleteTarget = ref(null)
 const activeTab = ref('all')
 const page = ref(1)
 const pagination = ref(null)
+const search = ref('')
 
 const tabs = [
   { label: 'All',     value: 'all'     },
@@ -155,19 +159,12 @@ async function fetchPalettes() {
   try {
     const params = new URLSearchParams({ page: page.value })
     if (activeTab.value !== 'all') params.set('source', activeTab.value)
+    if (search.value) params.set('search', search.value)
     const { data } = await axios.get(`/api/admin/palettes?${params}`)
     palettes.value = data.data
-    pagination.value = {
-      from: data.from,
-      to: data.to,
-      total: data.total,
-      last_page: data.last_page,
-    }
-  } catch (e) {
-    msg.value = 'Failed to load palettes.'
-  } finally {
-    loading.value = false
-  }
+    pagination.value = { from: data.from, to: data.to, total: data.total, last_page: data.last_page }
+  } catch (e) { msg.value = 'Failed to load palettes.' }
+  finally { loading.value = false }
 }
 
 function confirmDelete(palette) {

@@ -1,34 +1,53 @@
 // src/composables/useNotifications.js
-
 import { ref, computed } from 'vue'
+import axios from 'axios'
 
 function getKey() {
   const user = JSON.parse(localStorage.getItem('user') || 'null')
   return user?.id ? `notifications_${user.id}` : 'notifications_guest'
 }
 
-function loadNotifications() {
-  try {
-    return JSON.parse(localStorage.getItem(getKey()) || '[]')
-  } catch {
-    return []
-  }
+function loadLocal() {
+  try { return JSON.parse(localStorage.getItem(getKey()) || '[]') } catch { return [] }
 }
 
-const notifications = ref(loadNotifications())
+const notifications = ref(loadLocal())
+const serverNotifications = ref([])
 
 function persist() {
   localStorage.setItem(getKey(), JSON.stringify(notifications.value))
 }
 
 export function useNotifications() {
+  const unreadCount = computed(() =>
+    notifications.value.filter(n => !n.read).length +
+    serverNotifications.value.filter(n => !n.read_at).length
+  )
 
-  const unreadCount = computed(() => notifications.value.filter(n => !n.read).length)
+  async function loadServerNotifications() {
+    try {
+      const { data } = await axios.get('/api/notifications')
+      serverNotifications.value = data
+    } catch (e) { /* not logged in */ }
+  }
+
+  async function markServerRead(id) {
+    try {
+      await axios.patch(`/api/notifications/${id}/read`)
+      const n = serverNotifications.value.find(n => n.id === id)
+      if (n) n.read_at = new Date().toISOString()
+    } catch (e) { console.error(e) }
+  }
+
+  async function markAllServerRead() {
+    try {
+      await axios.patch('/api/notifications/read-all')
+      serverNotifications.value = serverNotifications.value.map(n => ({ ...n, read_at: new Date().toISOString() }))
+    } catch (e) { console.error(e) }
+  }
 
   function addNotification(palette) {
-    // reload in case user switched accounts
-    notifications.value = loadNotifications()
-
+    notifications.value = loadLocal()
     const notif = {
       id:        Date.now().toString(36) + Math.random().toString(36).slice(2),
       paletteId: palette.id,
@@ -38,15 +57,14 @@ export function useNotifications() {
       read:      false,
     }
     notifications.value.unshift(notif)
-    if (notifications.value.length > 20) {
-      notifications.value = notifications.value.slice(0, 20)
-    }
+    if (notifications.value.length > 20) notifications.value = notifications.value.slice(0, 20)
     persist()
   }
 
   function markAllRead() {
     notifications.value = notifications.value.map(n => ({ ...n, read: true }))
     persist()
+    markAllServerRead()
   }
 
   function clearNotifications() {
@@ -54,10 +72,20 @@ export function useNotifications() {
     persist()
   }
 
-  // Call this after login/logout to reload the correct user's notifications
   function reloadForUser() {
-    notifications.value = loadNotifications()
+    notifications.value = loadLocal()
+    loadServerNotifications()
   }
 
-  return { notifications, unreadCount, addNotification, markAllRead, clearNotifications, reloadForUser }
+  return {
+    notifications,
+    serverNotifications,
+    unreadCount,
+    addNotification,
+    markAllRead,
+    markServerRead,
+    clearNotifications,
+    reloadForUser,
+    loadServerNotifications,
+  }
 }

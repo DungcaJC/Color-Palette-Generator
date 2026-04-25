@@ -73,10 +73,3 @@ async function submit() {
   }
 }
 </script>
-
-<style>
-  input {
-    caret-color: black;
-    color: black;
-  }
-</style>
