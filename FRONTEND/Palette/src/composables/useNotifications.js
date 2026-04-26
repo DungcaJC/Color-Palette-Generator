@@ -49,27 +49,28 @@ export function useNotifications() {
   function addNotification(palette) {
     notifications.value = loadLocal()
     const notif = {
-      id:        Date.now().toString(36) + Math.random().toString(36).slice(2),
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
       paletteId: palette.id,
-      name:      palette.name,
-      colors:    (palette.colors || []).slice(0, 5),
-      date:      new Date().toISOString(),
-      read:      false,
+      name: palette.name,
+      colors: (palette.colors || []).slice(0, 5),
+      date: new Date().toISOString(),
+      read: false,
     }
     notifications.value.unshift(notif)
     if (notifications.value.length > 20) notifications.value = notifications.value.slice(0, 20)
     persist()
   }
 
-  function markAllRead() {
+  async function markAllRead() {
     notifications.value = notifications.value.map(n => ({ ...n, read: true }))
     persist()
-    markAllServerRead()
+    await markAllServerRead()
   }
 
-  function clearNotifications() {
+  async function clearNotifications() {
     notifications.value = []
     persist()
+    serverNotifications.value = []
   }
 
   function reloadForUser() {
@@ -77,15 +78,14 @@ export function useNotifications() {
     loadServerNotifications()
   }
 
+  function removeServerNotification(id) {
+    serverNotifications.value = serverNotifications.value.filter(n => n.id !== id)
+  }
+
   return {
-    notifications,
-    serverNotifications,
-    unreadCount,
-    addNotification,
-    markAllRead,
-    markServerRead,
-    clearNotifications,
-    reloadForUser,
-    loadServerNotifications,
+    notifications, serverNotifications, unreadCount,
+    addNotification, markAllRead, markServerRead, markAllServerRead,
+    clearNotifications, reloadForUser, loadServerNotifications,
+    removeServerNotification,
   }
 }

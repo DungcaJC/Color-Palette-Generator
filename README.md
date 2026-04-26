@@ -43,6 +43,7 @@ Start the web: (use a Terminal for each command)
 
 Type this command to start the backend server:
 C:\laragon\www\Color-Palette-Generator> cd BACKEND | php artisan serve
+C:\laragon\www\Color-Palette-Generator> cd BACKEND | php artisan schedule:work
 
 Type this command to start the frontend development server:
 C:\laragon\www\Color-Palette-Generator> cd FRONTEND/Palette | npm run dev

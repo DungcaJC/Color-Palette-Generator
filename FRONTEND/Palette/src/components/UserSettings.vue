@@ -1,4 +1,5 @@
 <template>
+  <!-- UserSettings.vue -->
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 
     <div class="bg-[#0d1117] pt-10 pb-20 px-8 text-center">
@@ -158,7 +159,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuth } from '../composables/useAuth'
 import { usePaletteStore } from '../composables/usePaletteStore'
@@ -167,7 +168,8 @@ const emit = defineEmits(['logout'])
 const { logout } = useAuth()
 const { getAll, clearAll } = usePaletteStore()
 
-const PREFS_KEY = 'user_preferences'
+const { user } = useAuth()
+const PREFS_KEY = computed(() => `user_preferences_${user.value?.id || 'guest'}`)
 
 const darkMode = ref(false)
 const notificationsEnabled = ref(true)
@@ -179,15 +181,13 @@ const deleting = ref(false)
 const successMsg = ref('')
 
 onMounted(() => {
-  const prefs = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}')
-  
-  // ← read the actual current state of the document, not just prefs
+  const prefs = JSON.parse(localStorage.getItem(PREFS_KEY.value) || '{}')
   darkMode.value = document.documentElement.classList.contains('dark')
   notificationsEnabled.value = prefs.notificationsEnabled ?? true
 })
 
 function savePrefs() {
-  localStorage.setItem(PREFS_KEY, JSON.stringify({
+  localStorage.setItem(PREFS_KEY.value, JSON.stringify({
     darkMode: darkMode.value,
     notificationsEnabled: notificationsEnabled.value,
   }))

@@ -13,14 +13,14 @@
         v-model="email"
         type="email"
         placeholder="Email"
-        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+        class="Login-input w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
       />
 
       <input
         v-model="password"
         type="password"
         placeholder="Password"
-        class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
+        class="Login-input w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-gray-400"
         @keyup.enter="submit"
       />
 
@@ -73,3 +73,12 @@ async function submit() {
   }
 }
 </script>
+
+<style>
+  .Login-input {
+    transition: border-color 0.2s;
+    caret-color: black;
+    cursor: text;
+    color: black;
+  }
+</style>

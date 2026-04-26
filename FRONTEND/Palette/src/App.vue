@@ -45,6 +45,10 @@ import AdminRoles          from './components/AdminRoles.vue'
 import Community           from './components/Community.vue'
 import AdminReports        from './components/AdminReports.vue'
 import SavePost            from './components/SavePost.vue'
+import AdminAppeals        from './components/AdminAppeals.vue'
+import Footer   from './components/Footer.vue'
+import About    from './components/About.vue'
+import LearnMore from './components/LearnMore.vue'
 import './assets/style.css'
 
 const { isLoggedIn, logout, refreshUser } = useAuth()
@@ -53,11 +57,23 @@ const isLoading = ref(true)
 const scrollToId = ref(null)
 
 onMounted(async () => {
-  const prefs = JSON.parse(localStorage.getItem('user_preferences') || '{}')
-  if (prefs.darkMode) document.documentElement.classList.add('dark')
+  // Read user from localStorage SYNCHRONOUSLY before anything else
+  const storedUser = JSON.parse(localStorage.getItem('user') || 'null')
+  const userId = storedUser?.id
+
+  if (userId) {
+    const prefsKey = `user_preferences_${userId}`
+    const prefs = JSON.parse(localStorage.getItem(prefsKey) || '{}')
+    // Apply dark mode immediately on load — before any async calls
+    if (prefs.darkMode === true) {
+      document.documentElement.classList.add('dark')
+    } else if (prefs.darkMode === false) {
+      document.documentElement.classList.remove('dark')
+    }
+  }
 
   if (isLoggedIn()) await refreshUser()
-  
+
   setTimeout(() => { isLoading.value = false }, 1500)
 })
 
@@ -78,6 +94,9 @@ const compMap = {
   Community:           markRaw(Community),
   AdminReports:        markRaw(AdminReports),
   SavePost:            markRaw(SavePost),
+  AdminAppeals:        markRaw(AdminAppeals),
+  About:               markRaw(About),
+  LearnMore:           markRaw(LearnMore),
 }
 
 // If already logged in show Heroes, otherwise show Login
@@ -96,16 +115,21 @@ function navigate(name) {
   showLoading(() => { activeComp.value = compMap[name] ?? compMap.Heroes })
 }
 
-function handleLogin() {
+async function handleLogin() {
+  const userId = JSON.parse(localStorage.getItem('user') || '{}')?.id
+  const prefsKey = userId ? `user_preferences_${userId}` : 'user_preferences'
+  const prefs = JSON.parse(localStorage.getItem(prefsKey) || '{}')
+  if (prefs.darkMode) {
+    document.documentElement.classList.add('dark')
+  } else {
+    document.documentElement.classList.remove('dark')
+  }
   showLoading(() => { activeComp.value = compMap.Heroes })
 }
 
 async function handleLogout() {
-  try {
-    await logout()
-  } catch (e) {
-    // force logout even if API fails
-  }
+  try { await logout() } catch (e) {}
+  document.documentElement.classList.remove('dark')
   showLoading(() => { activeComp.value = compMap.Login })
 }
 

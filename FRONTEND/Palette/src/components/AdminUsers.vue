@@ -39,7 +39,7 @@
                 class="border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
                 :class="u.is_banned ? 'opacity-60' : ''"
               >
-                <td class="px-6 py-4 cursor-pointer" @click="openUserModal(u)">
+                <td class="px-6 py-4 cursor-pointer" @click="selectedUserId = u.id">
                   <div class="flex items-center gap-3">
                     <div class="relative">
                       <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
@@ -83,61 +83,12 @@
       <p v-if="msg" class="text-xs text-center" :class="msg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ msg }}</p>
     </div>
 
-    <!-- User Profile Modal -->
-    <div v-if="selectedUser" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4" @click.self="selectedUser = null">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-
-        <!-- Banner -->
-        <div class="bg-[#0d1117] rounded-t-2xl p-6 flex items-center gap-5 relative">
-          <button @click="selectedUser = null" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg">✕</button>
-          <div class="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center text-white text-2xl font-bold overflow-hidden shrink-0">
-            <img v-if="selectedUser.avatar" :src="`http://localhost:8000/storage/${selectedUser.avatar}`" class="w-full h-full object-cover" />
-            <span v-else>{{ selectedUser.name?.charAt(0).toUpperCase() }}</span>
-          </div>
-          <div class="flex-1">
-            <div class="flex items-center gap-2 flex-wrap">
-              <h2 class="text-white text-lg font-bold">{{ selectedUser.name }}</h2>
-              <span class="w-2 h-2 rounded-full" :class="roleColor(selectedUser.role)"></span>
-              <span class="text-xs" :class="selectedUser.role === 'superadmin' ? 'text-red-400' : selectedUser.role === 'admin' ? 'text-blue-400' : 'text-green-400'">{{ selectedUser.role }}</span>
-              <span v-if="selectedUser.is_banned" class="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full">Banned</span>
-            </div>
-            <p class="text-gray-400 text-sm">{{ selectedUser.email }}</p>
-            <p class="text-gray-500 text-xs mt-0.5">{{ selectedUser.bio || 'No bio' }}</p>
-            <p class="text-gray-600 text-xs mt-1">Joined {{ formatDate(selectedUser.created_at) }}</p>
-          </div>
-        </div>
-
-        <!-- Stats -->
-        <div class="grid grid-cols-2 border-b border-gray-100 dark:border-gray-700">
-          <div class="text-center py-4 border-r border-gray-100 dark:border-gray-700">
-            <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ selectedUser.palettes_count }}</p>
-            <p class="text-xs text-gray-400">Palettes</p>
-          </div>
-          <div class="text-center py-4">
-            <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ userPosts.length }}</p>
-            <p class="text-xs text-gray-400">Posts</p>
-          </div>
-        </div>
-
-        <!-- Posts -->
-        <div class="p-5">
-          <p class="text-xs text-gray-400 uppercase tracking-widest mb-3">Recent Posts</p>
-          <div v-if="userPosts.length === 0" class="text-center py-6 text-gray-400 text-sm">No posts yet</div>
-          <div class="grid grid-cols-4 gap-2">
-            <div v-for="post in userPosts" :key="post.id" class="aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700">
-              <img v-if="post.image" :src="`http://localhost:8000/storage/${post.image}`" class="w-full h-full object-cover" />
-              <div v-else class="w-full h-full flex items-center justify-center text-2xl">🎨</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="px-5 pb-5 flex gap-2 flex-wrap border-t border-gray-100 dark:border-gray-700 pt-4">
-          <button v-if="selectedUser.role !== 'superadmin'" @click="toggleBan(selectedUser); selectedUser = null" class="px-4 py-2 rounded-xl text-sm font-medium border transition" :class="selectedUser.is_banned ? 'border-green-200 text-green-500 hover:bg-green-50' : 'border-amber-200 text-amber-500 hover:bg-amber-50'">{{ selectedUser.is_banned ? 'Unban User' : 'Ban User' }}</button>
-          <button v-if="selectedUser.role !== 'superadmin'" @click="confirmDelete(selectedUser); selectedUser = null" class="px-4 py-2 rounded-xl text-sm font-medium border border-red-200 text-red-400 hover:bg-red-50 transition">Delete Account</button>
-        </div>
-      </div>
-    </div>
+    <!-- ─── User Profile Modal (shared component) ─── -->
+    <UserProfileModal
+      v-if="selectedUserId"
+      :userId="selectedUserId"
+      @close="selectedUserId = null"
+    />
 
     <!-- Confirm Delete Modal -->
     <div v-if="deleteTarget" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
@@ -157,6 +108,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import UserProfileModal from './UserProfileModal.vue'
 
 defineEmits(['navigate'])
 
@@ -165,8 +117,7 @@ const loading = ref(true)
 const search = ref('')
 const msg = ref('')
 const deleteTarget = ref(null)
-const selectedUser = ref(null)
-const userPosts = ref([])
+const selectedUserId = ref(null)
 
 onMounted(fetchUsers)
 
@@ -177,14 +128,6 @@ async function fetchUsers() {
     users.value = data
   } catch (e) { msg.value = 'Failed to load users.' }
   finally { loading.value = false }
-}
-
-async function openUserModal(u) {
-  selectedUser.value = u
-  try {
-    const { data } = await axios.get(`/api/users/${u.id}/profile`)
-    userPosts.value = data.posts || []
-  } catch (e) { userPosts.value = [] }
 }
 
 async function toggleBan(u) {

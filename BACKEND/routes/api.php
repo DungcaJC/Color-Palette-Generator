@@ -11,7 +11,11 @@ use App\Models\Warning;
 use App\Models\UserNotification;
 use App\Models\StatsHistory;
 use App\Models\Post;
-
+use App\Models\Comment;
+use App\Models\CommentLike;
+use App\Models\CommentReport;
+use App\Models\Appeal;
+use App\Models\AppealImage;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -211,7 +215,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/me', function (Request $request) {
-        return response()->json($request->user());
+        return response()->json($request->user()->only([
+            'id', 'name', 'email', 'role', 'avatar', 'bio',
+            'is_banned', 'strikes', 'created_at'
+        ]));
     });
 
     // Update bio
@@ -238,9 +245,11 @@ Route::middleware('auth:sanctum')->group(function () {
             ->where('user_id', $request->user()->id)->first();
         if ($existing) {
             $existing->delete();
+            $post->decrement('saves_count');
             return response()->json(['saved' => false]);
         }
         \App\Models\SavedPost::create(['post_id' => $post->id, 'user_id' => $request->user()->id]);
+        $post->increment('saves_count');
         return response()->json(['saved' => true]);
     });
 
@@ -366,6 +375,23 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function 
         return response()->json(['message' => 'Palette deleted.']);
     });
 
+    Route::get('/comment-reports', function (Request $request) {
+        $search = $request->query('search', '');
+        
+        return \App\Models\CommentReport::with([
+            'comment:id,post_id,user_id,content',
+            'comment.user:id,name,avatar',
+            'comment.post:id,image,caption,category,colors,user_id',
+            'comment.post.user:id,name,avatar',
+            'reporter:id,name,avatar',
+        ])
+        ->when($search, fn($q) =>
+            $q->whereHas('reporter', fn($u) => $u->where('name', 'like', "%$search%"))
+            ->orWhereHas('comment', fn($c) => $c->where('content', 'like', "%$search%"))
+        )
+        ->latest()
+        ->paginate(20);
+    });
 });
 
 // ─── Super Admin Only ─────────────────────────────────
@@ -512,12 +538,19 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function 
 
     // Get all reports
     Route::get('/reports', function (Request $request) {
-        $status = $request->query('status', 'pending');
+        $status = $request->query('status', 'all');
+        $search = $request->query('search', '');
+
         return \App\Models\Report::with([
+            'post:id,image,caption,category,colors,user_id,likes_count,saves_count',
             'post.user:id,name,avatar',
-            'reporter:id,name'
+            'reporter:id,name,avatar',
         ])
         ->when($status !== 'all', fn($q) => $q->where('status', $status))
+        ->when($search, fn($q) =>
+            $q->whereHas('reporter', fn($u) => $u->where('name', 'like', "%$search%"))
+            ->orWhereHas('post', fn($p) => $p->where('caption', 'like', "%$search%"))
+        )
         ->latest()
         ->paginate(20);
     });
@@ -712,4 +745,244 @@ Route::middleware(['auth:sanctum', 'isSuperAdmin'])->prefix('admin')->group(func
 
         return response()->json(['message' => 'Role updated.', 'user' => $user]);
     });
+});
+
+// ─── Comments (public read, auth write) ───────────────
+Route::get('/posts/{post}/comments', function (\App\Models\Post $post, Request $request) {
+    return Comment::where('post_id', $post->id)
+        ->whereNull('parent_id')
+        ->with([
+            'user:id,name,avatar,role',
+            'replies.user:id,name,avatar,role',
+        ])
+        ->withCount([
+            'likes as liked_by_user' => fn($q) => $q->where('user_id', $request->user()?->id ?? 0),
+            'likes as likes_count',
+        ])
+        ->latest()
+        ->get();
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Post comment
+    Route::post('/posts/{post}/comments', function (Request $request, \App\Models\Post $post) {
+        $request->validate([
+            'content'   => 'required|string|max:500',
+            'parent_id' => 'nullable|exists:comments,id',
+        ]);
+        $comment = Comment::create([
+            'post_id'   => $post->id,
+            'user_id'   => $request->user()->id,
+            'parent_id' => $request->parent_id,
+            'content'   => $request->content,
+        ]);
+        return $comment->load('user:id,name,avatar,role');
+    });
+
+    // Delete comment
+    Route::delete('/comments/{comment}', function (Request $request, Comment $comment) {
+        if ($comment->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        $comment->delete();
+        return response()->json(['message' => 'Deleted']);
+    });
+
+    // Like / Unlike comment
+    Route::post('/comments/{comment}/like', function (Request $request, Comment $comment) {
+        $existing = CommentLike::where('comment_id', $comment->id)
+            ->where('user_id', $request->user()->id)->first();
+        if ($existing) {
+            $existing->delete();
+            $comment->decrement('likes_count');
+            return response()->json(['liked' => false, 'likes_count' => $comment->fresh()->likes_count]);
+        }
+        CommentLike::create(['comment_id' => $comment->id, 'user_id' => $request->user()->id]);
+        $comment->increment('likes_count');
+        return response()->json(['liked' => true, 'likes_count' => $comment->fresh()->likes_count]);
+    });
+
+    // Report comment
+    Route::post('/comments/{comment}/report', function (Request $request, Comment $comment) {
+        $request->validate([
+            'topic'   => 'required|in:spam,inappropriate,harassment,copyright,other',
+            'details' => 'nullable|string|max:500',
+        ]);
+        \App\Models\CommentReport::create([
+            'comment_id'  => $comment->id,
+            'reporter_id' => $request->user()->id,
+            'topic'       => $request->topic,
+            'details'     => $request->details,
+        ]);
+        return response()->json(['message' => 'Comment reported.']);
+    });
+
+    // Add to api.php admin routes
+    Route::get('/comment-reports', function (Request $request) {
+        $search = $request->query('search', '');
+        
+        return \App\Models\CommentReport::with([
+            'comment:id,post_id,user_id,content',
+            'comment.user:id,name,avatar',
+            'comment.post:id,image,caption,category,colors,user_id',
+            'comment.post.user:id,name,avatar',
+            'reporter:id,name,avatar',
+        ])
+        ->when($search, fn($q) =>
+            $q->whereHas('reporter', fn($u) => $u->where('name', 'like', "%$search%"))
+            ->orWhereHas('comment', fn($c) => $c->where('content', 'like', "%$search%"))
+        )
+        ->latest()
+        ->paginate(20);
+    });
+
+    // Submit appeal for a warning
+    Route::post('/warnings/{warning}/appeal', function (Request $request, \App\Models\Warning $warning) {
+    // Allow if user owns the warning OR if it's from a notification
+    if ($warning->user_id !== $request->user()->id) {
+        return response()->json(['message' => 'Unauthorized'], 403);
+    }
+
+    // Check if appeal already exists
+    if ($warning->appeal) {
+        return response()->json(['message' => 'You already submitted an appeal for this warning.'], 422);
+    }
+
+    $request->validate([
+        'apology_text' => 'required|string|max:1000',
+        'images'       => 'nullable|array|max:5',
+        'images.*'     => 'image|max:3072',
+    ]);
+
+    $appeal = \App\Models\Appeal::create([
+        'warning_id'   => $warning->id,
+        'user_id'      => $request->user()->id,
+        'apology_text' => $request->apology_text,
+    ]);
+
+    if ($request->hasFile('images')) {
+        foreach ($request->file('images') as $img) {
+            $path = $img->store('appeals', 'public');
+            \App\Models\AppealImage::create(['appeal_id' => $appeal->id, 'image' => $path]);
+        }
+    }
+
+    // Update warning status
+    $warning->status = 'reviewed';
+    $warning->save();
+
+    return response()->json($appeal->load('images'), 201);
+});
+
+    // Get my warnings (with appeal status)
+    Route::get('/my-warnings', function (Request $request) {
+        $warnings = \App\Models\Warning::where('user_id', $request->user()->id)
+            ->with(['post:id,image,caption,category,colors', 'appeal.images'])
+            ->latest()
+            ->get();
+
+        // Add warning_id to each item for appeal submission
+        return $warnings->map(function($w) {
+            return array_merge($w->toArray(), ['id' => $w->id]);
+        });
+    });
+
+    // Get my appeals
+    Route::get('/my-appeals', function (Request $request) {
+    return \App\Models\Appeal::where('user_id', $request->user()->id)
+        ->with(['warning.post', 'images', 'reviewer:id,name'])
+        ->latest()
+        ->get();
+    });
+
+});
+
+// ─── Admin Appeal Routes ───────────────────────────────
+Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function () {
+
+    // Get all appeals
+    Route::get('/appeals', function (Request $request) {
+        $status = $request->query('status', 'pending');
+        $search = $request->query('search', '');
+        
+        return Appeal::with(['user:id,name,avatar', 'warning', 'images', 'reviewer:id,name'])
+            ->when($status !== 'all', fn($q) => $q->where('status', $status))
+            ->when($search, fn($q) =>
+                $q->whereHas('user', fn($u) => $u->where('name', 'like', "%$search%"))
+            )
+            ->latest()
+            ->paginate(20);
+    });
+
+    // Review appeal — accept (no ban) or reject (ban)
+    Route::patch('/appeals/{appeal}/review', function (Request $request, Appeal $appeal) {
+        $request->validate([
+            'decision'       => 'required|in:accept,reject',
+            'admin_response' => 'nullable|string|max:500',
+        ]);
+
+        $appeal->status         = $request->decision === 'accept' ? 'accepted' : 'rejected';
+        $appeal->admin_response = $request->admin_response;
+        $appeal->reviewed_by    = $request->user()->id;
+        $appeal->reviewed_at    = now();
+        $appeal->save();
+
+        $user = $appeal->warning->user;
+
+        if ($request->decision === 'reject') {
+            // Add strike
+            // Reset strikes if over 1 year
+            if ($user->strikes_reset_at && now()->gt($user->strikes_reset_at)) {
+                $user->strikes = 0;
+            }
+            $user->strikes += 1;
+            $user->strikes_reset_at = $user->strikes_reset_at ?? now()->addYear();
+
+            // Determine ban duration based on strikes
+            $banDays = match(true) {
+                $user->strikes >= 15 => 365,
+                $user->strikes >= 10 => 30,
+                $user->strikes >= 5  => 7,
+                $user->strikes >= 3  => 1,
+                default              => null,
+            };
+
+            if ($banDays) {
+                $user->is_banned = true;
+                // Store ban expiry in a notification
+                \App\Models\UserNotification::create([
+                    'user_id' => $user->id,
+                    'type'    => 'warning',
+                    'title'   => '🚫 Appeal Rejected — Account Banned',
+                    'message' => "Your appeal was rejected. You have been banned for {$banDays} day(s) due to {$user->strikes} strikes.",
+                    'data'    => ['strikes' => $user->strikes, 'ban_days' => $banDays],
+                ]);
+            } else {
+                \App\Models\UserNotification::create([
+                    'user_id' => $user->id,
+                    'type'    => 'warning',
+                    'title'   => '⚠️ Appeal Rejected — Strike Added',
+                    'message' => "Your appeal was rejected. You now have {$user->strikes} strike(s). At 3 strikes you will receive a 1-day ban.",
+                    'data'    => ['strikes' => $user->strikes],
+                ]);
+            }
+            $user->save();
+        } else {
+            // Accept — no ban, notify user
+            \App\Models\UserNotification::create([
+                'user_id' => $user->id,
+                'type'    => 'general',
+                'title'   => '✅ Appeal Accepted',
+                'message' => 'Your appeal has been reviewed and accepted. No further action will be taken.',
+                'data'    => ['admin_response' => $request->admin_response],
+            ]);
+            // Update warning status
+            $appeal->warning->status = 'reviewed';
+            $appeal->warning->save();
+        }
+
+        return response()->json(['message' => 'Appeal reviewed.', 'appeal' => $appeal]);
+    });
+
 });

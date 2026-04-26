@@ -75,7 +75,9 @@
         <img src="../assets/EMOJI/ANGRY.png" alt="Save Palette feature" />
       </template>
     </HomepageContentFeatures>
+    <Footer @navigate="$emit('navigate', $event)" />
   </div>
+
 </template>
 
 <script setup>
@@ -83,6 +85,7 @@ import '../assets/Logo-images/Palette-Logo.png'
 import '../assets/Bg-Images/ColorPalette3694.png'
 import '../assets/style.css'
 import HomepageContentFeatures from './HomepageContentFeatures.vue'
+import Footer from './Footer.vue'
 
 const navItems = [
   { label: 'Projects',     icon: '□', active: false },

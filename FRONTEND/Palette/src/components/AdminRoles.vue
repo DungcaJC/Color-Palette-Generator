@@ -45,7 +45,7 @@
           class="flex items-center justify-between px-6 py-4 border-b border-gray-50 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
 
           <!-- Clickable user info -->
-          <div class="flex items-center gap-3 cursor-pointer" @click="openUserModal(u)">
+          <div class="flex items-center gap-3 cursor-pointer" @click="selectedUserId = u.id">
             <div class="relative">
               <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
                 <img v-if="u.avatar" :src="`http://localhost:8000/storage/${u.avatar}`" class="w-full h-full object-cover" />
@@ -79,36 +79,12 @@
       <p v-if="msg" class="text-xs text-center" :class="msg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ msg }}</p>
     </div>
 
-    <!-- User Profile Modal -->
-    <div v-if="selectedUser" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4" @click.self="selectedUser = null">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div class="bg-[#0d1117] rounded-t-2xl p-6 flex items-center gap-4 relative">
-          <button @click="selectedUser = null" class="absolute top-4 right-4 text-gray-400 hover:text-white">✕</button>
-          <div class="w-14 h-14 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xl font-bold overflow-hidden shrink-0">
-            <img v-if="selectedUser.avatar" :src="`http://localhost:8000/storage/${selectedUser.avatar}`" class="w-full h-full object-cover" />
-            <span v-else>{{ selectedUser.name?.charAt(0).toUpperCase() }}</span>
-          </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <h2 class="text-white font-bold">{{ selectedUser.name }}</h2>
-              <span class="w-2 h-2 rounded-full" :class="roleColor(selectedUser.role)"></span>
-              <span class="text-xs" :class="roleLabelColor(selectedUser.role)">{{ selectedUser.role }}</span>
-            </div>
-            <p class="text-gray-400 text-sm">{{ selectedUser.email }}</p>
-            <p class="text-gray-500 text-xs mt-0.5">{{ selectedUser.bio || 'No bio' }}</p>
-          </div>
-        </div>
-        <div class="p-5">
-          <div class="grid grid-cols-3 gap-2">
-            <div v-for="post in selectedUserPosts" :key="post.id" class="aspect-square rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
-              <img v-if="post.image" :src="`http://localhost:8000/storage/${post.image}`" class="w-full h-full object-cover" />
-              <div v-else class="w-full h-full flex items-center justify-center text-2xl">🎨</div>
-            </div>
-          </div>
-          <p v-if="!selectedUserPosts.length" class="text-center text-gray-400 text-sm py-4">No posts</p>
-        </div>
-      </div>
-    </div>
+    <!-- ─── User Profile Modal (shared component) ─── -->
+    <UserProfileModal
+      v-if="selectedUserId"
+      :userId="selectedUserId"
+      @close="selectedUserId = null"
+    />
 
   </div>
 </template>
@@ -117,6 +93,7 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useAuth } from '../composables/useAuth'
+import UserProfileModal from './UserProfileModal.vue'
 
 const { user: currentUser } = useAuth()
 
@@ -125,8 +102,7 @@ const loading = ref(true)
 const search = ref('')
 const roleFilter = ref('all')
 const msg = ref('')
-const selectedUser = ref(null)
-const selectedUserPosts = ref([])
+const selectedUserId = ref(null)
 
 const roleCategories = [
   { value: 'all',        label: 'All' },
@@ -149,14 +125,6 @@ async function fetchUsers() {
     users.value = data
   } catch (e) { msg.value = 'Failed to load users.' }
   finally { loading.value = false }
-}
-
-async function openUserModal(u) {
-  selectedUser.value = u
-  try {
-    const { data } = await axios.get(`/api/users/${u.id}/profile`)
-    selectedUserPosts.value = data.posts || []
-  } catch (e) { selectedUserPosts.value = [] }
 }
 
 async function changeRole(u) {
