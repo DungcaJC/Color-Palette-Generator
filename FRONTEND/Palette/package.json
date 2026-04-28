@@ -19,5 +19,8 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.5",
     "vite": "^8.0.4"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-x64-gnu": "*"
   }
 }
