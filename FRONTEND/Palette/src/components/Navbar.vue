@@ -252,7 +252,7 @@
                   <div class="relative">
                     <div
                       class="size-8 rounded-full bg-indigo-600 outline -outline-offset-1 outline-white/10 flex items-center justify-center text-white font-bold text-sm select-none overflow-hidden">
-                      <img v-if="user?.avatar" :src="`http://localhost:8000/storage/${user.avatar}`"
+                      <img v-if="user?.avatar" :src="user.avatar"
                         class="w-full h-full object-cover" />
                       <span v-else>{{ userInitial }}</span>
                     </div>

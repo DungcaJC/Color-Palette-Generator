@@ -16,7 +16,25 @@ use App\Models\CommentLike;
 use App\Models\CommentReport;
 use App\Models\Appeal;
 use App\Models\AppealImage;
-use App\Models\Follow; // ✅ FIXED: was missing, caused 500 on /users/{user}/profile
+use App\Models\Follow;
+use Cloudinary\Cloudinary;
+use Cloudinary\Configuration\Configuration;
+
+// Create a helper function — add this once near the top
+function uploadToCloudinary($file, $folder) {
+    $cloudinary = new Cloudinary(
+        Configuration::instance([
+            'cloud' => [
+                'cloud_name' => env('CLOUDINARY_CLOUD_NAME'),
+                'api_key'    => env('CLOUDINARY_API_KEY'),
+                'api_secret' => env('CLOUDINARY_API_SECRET'),
+            ],
+            'url' => ['secure' => true]
+        ])
+    );
+    $result = $cloudinary->uploadApi()->upload($file->getRealPath(), ['folder' => $folder]);
+    return $result['secure_url'];
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -286,7 +304,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Upload avatar
     Route::post('/user/avatar', function (Request $request) {
         $request->validate(['avatar' => 'required|image|max:2048']);
-        $path = $request->file('avatar')->store('avatars', 'public');
+        $path = uploadToCloudinary($request->file('avatar'), 'avatars');
         $user = $request->user();
         $user->avatar = $path;
         $user->save();
@@ -363,7 +381,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         $path = null;
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('posts', 'public');
+            $path = uploadToCloudinary($request->file('image'), 'posts');
         }
 
         $post = Post::create([
@@ -593,7 +611,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $img) {
-                $path = $img->store('appeals', 'public');
+                $path = uploadToCloudinary($img, 'appeals');
                 AppealImage::create(['appeal_id' => $appeal->id, 'image' => $path]);
             }
         }

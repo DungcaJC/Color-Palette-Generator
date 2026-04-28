@@ -324,7 +324,7 @@
             <!-- New comment input -->
             <div class="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700 shrink-0">
               <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
-                <img v-if="user?.avatar" :src="`http://localhost:8000/storage/${user.avatar}`" class="w-full h-full object-cover" />
+                <img v-if="user?.avatar" :src="user.avatar" class="w-full h-full object-cover" />
                 <span v-else>{{ user?.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div class="flex-1 flex gap-2">
