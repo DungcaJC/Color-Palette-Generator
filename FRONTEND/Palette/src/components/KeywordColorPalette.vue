@@ -41,7 +41,7 @@
         @click="search"
         :disabled="loading"
         class="px-8 py-3 rounded-full text-white font-bold text-sm tracking-wider disabled:opacity-50 transition hover:opacity-90"
-        style="background: linear-gradient(to right, #f97316, #f59e0b)"
+        style="background: #39ea56"
       >
         {{ loading ? 'Searching...' : 'Generate' }}
       </button>
@@ -50,7 +50,7 @@
         @click="saveSelected"
         :disabled="selectedIds.size === 0 || saving"
         class="px-8 py-3 rounded-full text-white font-bold text-sm tracking-wider disabled:opacity-50 transition hover:opacity-90"
-        style="background: linear-gradient(to right, #f59e0b, #fbbf24)"
+        style="background: #eea62b"
       >
         {{ saving ? 'Saving...' : 'Save' }}
         <span v-if="selectedIds.size > 0" class="ml-1 bg-white/30 text-white text-xs px-2 py-0.5 rounded-full">
@@ -123,6 +123,8 @@
     <p v-if="copied" class="fixed bottom-6 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg">
       ✓ Copied {{ copied }}
     </p>
+
+    <Footer @navigate="$emit('navigate', $event)" />
   </div>
 </template>
 
@@ -131,6 +133,8 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 import { usePaletteStore } from '../composables/usePaletteStore'
 import { useNotifications } from '../composables/useNotifications'
+import Footer from './Footer.vue'
+const emit = defineEmits(['navigate'])
 
 const { save, generateId } = usePaletteStore()
 const { addNotification } = useNotifications()

@@ -88,7 +88,7 @@
             <!-- Actions -->
             <div v-if="appeal.status === 'pending'" class="flex flex-col gap-2 shrink-0 min-w-40">
               <textarea v-model="appeal.adminResponse" placeholder="Admin response (optional)" rows="2"
-                class="w-full text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-3 py-2 focus:outline-none resize-none transition"></textarea>
+                class="w-full text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-3 py-2 focus:outline-none resize-none transition" style="white-space: pre-wrap; word-break: break-word;"></textarea>
               <button @click="reviewAppeal(appeal, 'accept')"
                 class="px-4 py-2 rounded-xl bg-green-500 text-white text-xs font-medium hover:bg-green-600 transition">
                 ✓ Accept (No Ban)

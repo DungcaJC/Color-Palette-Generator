@@ -59,7 +59,7 @@
           @click="savePalette"
           :disabled="colors.length === 0 || saving"
           class="flex-1 py-4 rounded-full text-white font-bold text-sm tracking-widest disabled:opacity-40 transition hover:opacity-90"
-          style="background: linear-gradient(to right, #4f46e5, #f97316)"
+          style="background: #eea62b"
         >
           {{ saving ? 'SAVING...' : 'SAVE PALETTE' }}
         </button>
@@ -76,6 +76,8 @@
       <p v-if="savedMsg" class="text-xs text-green-600 text-center">✓ {{ savedMsg }}</p>
       <p v-if="error" class="text-xs text-red-500 text-center">{{ error }}</p>
     </div>
+
+    <Footer @navigate="$emit('navigate', $event)" />
   </div>
 </template>
 
@@ -83,6 +85,8 @@
 import { ref } from 'vue'
 import { usePaletteStore } from '../composables/usePaletteStore'
 import { useNotifications } from '../composables/useNotifications'
+import Footer from './Footer.vue'
+const emit = defineEmits(['navigate'])
 
 const { save, generateId } = usePaletteStore()
 const { addNotification } = useNotifications()

@@ -112,6 +112,7 @@ function showLoading(callback) {
 
 function navigate(name) {
   scrollToId.value = null
+  window.scrollTo({ top: 0, behavior: 'smooth' })
   showLoading(() => { activeComp.value = compMap[name] ?? compMap.Heroes })
 }
 

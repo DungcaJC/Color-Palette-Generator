@@ -27,7 +27,7 @@ export function useNotifications() {
   async function loadServerNotifications() {
     try {
       const { data } = await axios.get('/api/notifications')
-      serverNotifications.value = data
+      serverNotifications.value = [...data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     } catch (e) { /* not logged in */ }
   }
 
@@ -70,6 +70,10 @@ export function useNotifications() {
   async function clearNotifications() {
     notifications.value = []
     persist()
+    // DELETE from DB so they don't come back on reload
+    try {
+      await axios.delete('/api/notifications')
+    } catch (e) { console.error(e) }
     serverNotifications.value = []
   }
 

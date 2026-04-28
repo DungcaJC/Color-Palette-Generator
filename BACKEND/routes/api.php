@@ -16,13 +16,15 @@ use App\Models\CommentLike;
 use App\Models\CommentReport;
 use App\Models\Appeal;
 use App\Models\AppealImage;
+use App\Models\Follow; // ✅ FIXED: was missing, caused 500 on /users/{user}/profile
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes
 |--------------------------------------------------------------------------
 */
 
-// Register - ✅ now returns a token so the user is immediately authenticated
+// Register
 Route::post('/register', function (Request $request) {
     $request->validate([
         'name'     => 'required|string|max:255',
@@ -36,7 +38,6 @@ Route::post('/register', function (Request $request) {
         'password' => Hash::make($request->password),
     ]);
 
-    // ✅ Create token immediately on register so frontend can use API right away
     $token = $user->createToken('auth_token')->plainTextToken;
 
     return response()->json([
@@ -59,9 +60,21 @@ Route::post('/login', function (Request $request) {
         return response()->json(['message' => 'Invalid credentials'], 401);
     }
 
-    // ← add this
     if ($user->is_banned) {
-        return response()->json(['message' => 'Your account has been banned.'], 403);
+        // Auto-unban if expired
+        if ($user->ban_expires_at && now()->gt($user->ban_expires_at)) {
+            $user->is_banned = false;
+            $user->ban_expires_at = null;
+            $user->save();
+        } else {
+            return response()->json([
+                'message'        => 'Your account has been banned.',
+                'is_banned'      => true,
+                'ban_duration'   => $user->ban_duration,
+                'ban_expires_at' => $user->ban_expires_at,
+                'ban_reason'     => $user->ban_reason,
+            ], 403);
+        }
     }
 
     $token = $user->createToken('auth_token')->plainTextToken;
@@ -73,7 +86,7 @@ Route::post('/login', function (Request $request) {
     ]);
 });
 
-// Palette search proxy (public - no auth needed)
+// Palette search proxy (public)
 Route::get('/palette/search', function (Request $request) {
     $q = $request->query('q', '');
     $response = \Illuminate\Support\Facades\Http::get('https://colormagic.app/api/palette/search', [
@@ -82,45 +95,104 @@ Route::get('/palette/search', function (Request $request) {
     return response()->json($response->json());
 });
 
-// Colormind proxy (this is the real one)
+// Colormind proxy (public)
 Route::post('/palette', function (Request $request) {
     $response = \Illuminate\Support\Facades\Http::post('http://colormind.io/api/', $request->all());
     return response()->json($response->json());
 });
 
-Route::post('/posts', function (Request $request) {
-    $request->validate([
-        'image'     => 'nullable|image|max:5120',
-        'caption'   => 'nullable|string|max:500',
-        'colors'    => 'nullable|array',
-        'category'  => 'nullable|string|max:100',
-        'post_type' => 'nullable|in:creation,palette',
-    ]);
+// Get posts (public feed)
+Route::get('/posts', function (Request $request) {
+    $category = $request->query('category', 'all');
+    $sort     = $request->query('sort', 'latest');
+    $search   = $request->query('search', '');
+    $type     = $request->query('type', 'posts');
 
-    $postType = $request->post_type ?? 'creation';
-    $category = $postType === 'palette' ? 'Palette' : ($request->category ?? 'Other');
-
-    // Image required for creation, optional for palette
-    if ($postType === 'creation' && !$request->hasFile('image')) {
-        return response()->json(['message' => 'Image is required for creation posts.'], 422);
+    if ($type === 'people') {
+        $users = User::when($search, fn($q) =>
+            $q->where('name', 'like', "%$search%")
+              ->orWhere('email', 'like', "%$search%")
+        )
+        ->withCount('posts')
+        ->latest()
+        ->paginate(20);
+        return response()->json($users);
     }
 
-    $path = null;
-    if ($request->hasFile('image')) {
-        $path = $request->file('image')->store('posts', 'public');
+    $query = Post::with('user:id,name,avatar,role,bio')
+        ->withCount([
+            'likes as liked_by_user' => function ($q) use ($request) {
+                $q->where('user_id', $request->user()?->id ?? 0);
+            },
+            'likes as likes_count'
+        ])
+        ->when($category !== 'all', fn($q) => $q->where('category', $category))
+        ->when($search, fn($q) =>
+            $q->where('caption', 'like', "%$search%")
+              ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%$search%"))
+        );
+
+    if ($sort === 'popular') {
+        $query->orderByDesc('likes_count');
+    } else {
+        $query->latest();
     }
 
-    $post = \App\Models\Post::create([
-        'user_id'   => $request->user()->id,
-        'image'     => $path,
-        'caption'   => $request->caption,
-        'colors'    => $request->colors ?? [],
-        'category'  => $category,
-        'post_type' => $postType,
-    ]);
-
-    return response()->json($post->load('user:id,name,avatar'), 201);
+    return $query->paginate(12);
 });
+
+// Get post comments (public)
+Route::get('/posts/{post}/comments', function (\App\Models\Post $post, Request $request) {
+    return Comment::where('post_id', $post->id)
+        ->whereNull('parent_id')
+        ->with([
+            'user:id,name,avatar,role',
+            'replies.user:id,name,avatar,role',
+        ])
+        ->withCount([
+            'likes as liked_by_user' => fn($q) => $q->where('user_id', $request->user()?->id ?? 0),
+            'likes as likes_count',
+        ])
+        ->latest()
+        ->get();
+});
+
+// ✅ FIXED: moved outside auth middleware so it works as a public profile page
+// (auth is optional — liked_by_user falls back to 0 for guests)
+Route::get('/users/{user}/profile', function (\App\Models\User $user, Request $request) {
+    $posts = Post::where('user_id', $user->id)
+        ->with('user:id,name,avatar')
+        ->withCount(['likes as liked_by_user' => function ($q) use ($request) {
+            $q->where('user_id', $request->user()?->id ?? 0);
+        }])
+        ->latest()->get();
+
+    $palettes = Palette::where('user_id', $user->id)->latest()->get();
+
+    $followersCount = Follow::where('following_id', $user->id)->count();
+    $followingCount = Follow::where('follower_id', $user->id)->count();
+    $isFollowing    = $request->user()
+        ? Follow::where('follower_id', $request->user()->id)->where('following_id', $user->id)->exists()
+        : false;
+
+    return response()->json([
+        'user' => [
+            'id'              => $user->id,
+            'name'            => $user->name,
+            'avatar'          => $user->avatar,
+            'bio'             => $user->bio,
+            'role'            => $user->role,
+            'created_at'      => $user->created_at,
+            'email'           => $user->email,
+            'followers_count' => $followersCount,
+            'following_count' => $followingCount,
+            'is_following'    => $isFollowing,
+        ],
+        'posts'    => $posts,
+        'palettes' => $palettes,
+    ]);
+});
+
 /*
 |--------------------------------------------------------------------------
 | Protected Routes
@@ -135,7 +207,22 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['message' => 'Logged out successfully']);
     });
 
-    // ✅ "Clear all" route MUST come before the wildcard {palette} route to avoid conflict
+    // Get current user
+    Route::get('/me', function (Request $request) {
+        $user = $request->user();
+        // Auto-unban if expired
+        if ($user->is_banned && $user->ban_expires_at && now()->gt($user->ban_expires_at)) {
+            $user->is_banned = false;
+            $user->ban_expires_at = null;
+            $user->save();
+        }
+        return response()->json($user->only([
+            'id', 'name', 'email', 'role', 'avatar', 'bio',
+            'is_banned', 'strikes', 'created_at', 'ban_expires_at', 'ban_reason', 'ban_duration'
+        ]));
+    });
+
+    // ✅ "Clear all" MUST come before the wildcard {palette} route
     Route::delete('/palettes/all', function (Request $request) {
         $request->user()->palettes()->delete();
         return response()->json(['message' => 'All palettes cleared']);
@@ -163,7 +250,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json($palette, 201);
     });
 
-    // Delete single palette — ✅ comes AFTER /palettes/all
+    // Delete single palette
     Route::delete('/palettes/{palette}', function (Request $request, Palette $palette) {
         if ($palette->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
@@ -214,13 +301,6 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['message' => 'Account deleted']);
     });
 
-    Route::get('/me', function (Request $request) {
-        return response()->json($request->user()->only([
-            'id', 'name', 'email', 'role', 'avatar', 'bio',
-            'is_banned', 'strikes', 'created_at'
-        ]));
-    });
-
     // Update bio
     Route::put('/user/bio', function (Request $request) {
         $request->validate(['bio' => 'nullable|string|max:500']);
@@ -240,7 +320,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Save / unsave post toggle
-    Route::post('/posts/{post}/save', function (Request $request, \App\Models\Post $post) {
+    Route::post('/posts/{post}/save', function (Request $request, Post $post) {
         $existing = \App\Models\SavedPost::where('post_id', $post->id)
             ->where('user_id', $request->user()->id)->first();
         if ($existing) {
@@ -256,7 +336,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Get saved posts
     Route::get('/saved-posts', function (Request $request) {
         $savedPostIds = \App\Models\SavedPost::where('user_id', $request->user()->id)->pluck('post_id');
-        return \App\Models\Post::whereIn('id', $savedPostIds)
+        return Post::whereIn('id', $savedPostIds)
             ->with('user:id,name,avatar')
             ->withCount(['likes as liked_by_user' => function ($q) use ($request) {
                 $q->where('user_id', $request->user()->id);
@@ -264,339 +344,38 @@ Route::middleware('auth:sanctum')->group(function () {
             ->latest()->get();
     });
 
-    // Get public user profile
-    Route::get('/users/{user}/profile', function (\App\Models\User $user, Request $request) {
-        $posts = \App\Models\Post::where('user_id', $user->id)
-            ->with('user:id,name,avatar')
-            ->withCount(['likes as liked_by_user' => function ($q) use ($request) {
-                $q->where('user_id', $request->user()?->id ?? 0);
-            }])
-            ->latest()->get();
-
-        $palettes = \App\Models\Palette::where('user_id', $user->id)->latest()->get();
-
-        return response()->json([
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'avatar' => $user->avatar,
-                'bio' => $user->bio,
-                'role' => $user->role,
-                'created_at' => $user->created_at,
-            ],
-            'posts' => $posts,
-            'palettes' => $palettes,
-        ]);
-    });
-});
-
-// ─── Admin Routes ─────────────────────────────────────
-Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function () {
-
-    // Dashboard stats
-    Route::get('/stats', function () {
-        return response()->json([
-            'total_users'          => \App\Models\User::count(),
-            'total_palettes'       => \App\Models\Palette::count(),
-            'total_posts'          => Post::count(),
-            'by_source'            => [
-                'image'   => \App\Models\Palette::where('source', 'image')->count(),
-                'keyword' => \App\Models\Palette::where('source', 'keyword')->count(),
-                'created' => \App\Models\Palette::where('source', 'created')->count(),
-            ],
-            'new_users_this_week'  => \App\Models\User::where('created_at', '>=', now()->subWeek())->count(),
-            'new_users_this_month' => \App\Models\User::where('created_at', '>=', now()->subMonth())->count(),
-        ]);
-    });
-
-    // Debug route to check auth and roles
-    Route::get('/debug-me', function (Request $request) {
-        return response()->json([
-            'user' => $request->user(),
-            'role' => $request->user()?->role,
-            'isAdmin' => $request->user()?->isAdmin(),
-        ]);
-    })->middleware('auth:sanctum');
-
-    // Get all users
-    Route::get('/users', function (Request $request) {
-        $search = $request->query('search', '');
-        return \App\Models\User::when($search, fn($q) =>
-            $q->where('name', 'like', "%$search%")
-              ->orWhere('email', 'like', "%$search%")
-        )
-        ->withCount('palettes')
-        ->latest()
-        ->get();
-    });
-
-    // Get single user
-    Route::get('/users/{user}', function (\App\Models\User $user) {
-        return $user->loadCount('palettes')->load('palettes');
-    });
-
-    // Ban / Unban user (toggle)
-    Route::patch('/users/{user}/ban', function (Request $request, \App\Models\User $user) {
-        if ($user->isSuperAdmin()) {
-            return response()->json(['message' => 'Cannot ban a super admin.'], 403);
-        }
-        $user->is_banned = !$user->is_banned;
-        $user->save();
-        return response()->json(['message' => $user->is_banned ? 'User banned.' : 'User unbanned.', 'is_banned' => $user->is_banned]);
-    });
-
-    // Delete user
-    Route::delete('/users/{user}', function (Request $request, \App\Models\User $user) {
-        if ($user->isSuperAdmin()) {
-            return response()->json(['message' => 'Cannot delete a super admin.'], 403);
-        }
-        $user->tokens()->delete();
-        $user->delete();
-        return response()->json(['message' => 'User deleted.']);
-    });
-
-    // Get all palettes
-    Route::get('/palettes', function (Request $request) {
-        $search = $request->query('search', '');
-        $query = \App\Models\Palette::with('user:id,name,email')->latest();
-        if ($request->query('source') && $request->query('source') !== 'all') {
-            $query->where('source', $request->query('source'));
-        }
-        if ($search) {
-            $query->where('name', 'like', "%$search%")
-                ->orWhereHas('user', fn($q) => $q->where('name', 'like', "%$search%"));
-        }
-        return $query->paginate(20);
-    });
-
-    // Delete any palette
-    Route::delete('/palettes/{palette}', function (\App\Models\Palette $palette) {
-        $palette->delete();
-        return response()->json(['message' => 'Palette deleted.']);
-    });
-
-    Route::get('/comment-reports', function (Request $request) {
-        $search = $request->query('search', '');
-        
-        return \App\Models\CommentReport::with([
-            'comment:id,post_id,user_id,content',
-            'comment.user:id,name,avatar',
-            'comment.post:id,image,caption,category,colors,user_id',
-            'comment.post.user:id,name,avatar',
-            'reporter:id,name,avatar',
-        ])
-        ->when($search, fn($q) =>
-            $q->whereHas('reporter', fn($u) => $u->where('name', 'like', "%$search%"))
-            ->orWhereHas('comment', fn($c) => $c->where('content', 'like', "%$search%"))
-        )
-        ->latest()
-        ->paginate(20);
-    });
-});
-
-// ─── Super Admin Only ─────────────────────────────────
-Route::middleware(['auth:sanctum', 'isSuperAdmin'])->prefix('admin')->group(function () {
-
-    // Promote/demote user role
-    Route::patch('/users/{user}/role', function (Request $request, \App\Models\User $user) {
-        $request->validate(['role' => 'required|in:user,admin,superadmin']);
-        $user->role = $request->role;
-        $user->save();
-        return response()->json(['message' => 'Role updated.', 'user' => $user]);
-    });
-
-});
-
-// ─── Community Routes ──────────────────────────────────
-
-// Get posts (public feed)
-Route::get('/posts', function (Request $request) {
-    $category = $request->query('category', 'all');
-    $sort     = $request->query('sort', 'latest');
-    $search   = $request->query('search', '');
-    $type     = $request->query('type', 'posts'); // posts or people
-    
-    if ($type === 'people') {
-        $users = \App\Models\User::when($search, fn($q) =>
-            $q->where('name', 'like', "%$search%")
-              ->orWhere('email', 'like', "%$search%")
-        )
-        ->withCount('posts')
-        ->latest()
-        ->paginate(20);
-        return response()->json($users);
-    }
-
-    $query = \App\Models\Post::with('user:id,name,avatar,role,bio')
-        ->withCount([
-            'likes as liked_by_user' => function ($q) use ($request) {
-                $q->where('user_id', $request->user()?->id ?? 0);
-            },
-            'likes as likes_count'
-        ])
-        ->when($category !== 'all', fn($q) => $q->where('category', $category))
-        ->when($search, fn($q) =>
-            $q->where('caption', 'like', "%$search%")
-              ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%$search%"))
-        );
-
-    if ($sort === 'popular') {
-        $query->orderByDesc('likes_count');
-    } else {
-        $query->latest();
-    }
-
-    return $query->paginate(12);
-});
-
-// Protected community routes
-Route::middleware('auth:sanctum')->group(function () {
-
     // Create post
     Route::post('/posts', function (Request $request) {
         $request->validate([
-            'image'    => 'required|image|max:5120',
-            'caption'  => 'nullable|string|max:500',
-            'colors'   => 'nullable|array',
-            'category' => 'nullable|string|max:100',
+            'image'     => 'nullable|image|max:5120',
+            'caption'   => 'nullable|string|max:500',
+            'colors'    => 'nullable|array',
+            'category'  => 'nullable|string|max:100',
+            'post_type' => 'nullable|in:creation,palette',
         ]);
 
-        $path = $request->file('image')->store('posts', 'public');
+        $postType = $request->post_type ?? 'creation';
+        $category = $postType === 'palette' ? 'Palette' : ($request->category ?? 'Other');
 
-        $post = \App\Models\Post::create([
-            'user_id'  => $request->user()->id,
-            'image'    => $path,
-            'caption'  => $request->caption,
-            'colors'   => $request->colors ?? [],
-            'category' => $request->category ?? 'Other',
+        if ($postType === 'creation' && !$request->hasFile('image')) {
+            return response()->json(['message' => 'Image is required for creation posts.'], 422);
+        }
+
+        $path = null;
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('posts', 'public');
+        }
+
+        $post = Post::create([
+            'user_id'   => $request->user()->id,
+            'image'     => $path,
+            'caption'   => $request->caption,
+            'colors'    => $request->colors ?? [],
+            'category'  => $category,
+            'post_type' => $postType,
         ]);
 
         return response()->json($post->load('user:id,name,avatar'), 201);
-    });
-
-    // Delete own post
-    Route::delete('/posts/{post}', function (Request $request, \App\Models\Post $post) {
-        if ($post->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-        // delete image file
-        \Illuminate\Support\Facades\Storage::disk('public')->delete($post->image);
-        $post->delete();
-        return response()->json(['message' => 'Post deleted']);
-    });
-
-    // Like / Unlike toggle
-    Route::post('/posts/{post}/like', function (Request $request, \App\Models\Post $post) {
-        $existing = \App\Models\PostLike::where('post_id', $post->id)
-            ->where('user_id', $request->user()->id)
-            ->first();
-
-        if ($existing) {
-            $existing->delete();
-            $post->decrement('likes_count');
-            return response()->json(['liked' => false, 'likes_count' => $post->fresh()->likes_count]);
-        }
-
-        \App\Models\PostLike::create([
-            'post_id' => $post->id,
-            'user_id' => $request->user()->id,
-        ]);
-        $post->increment('likes_count');
-        return response()->json(['liked' => true, 'likes_count' => $post->fresh()->likes_count]);
-    });
-
-    // Report post
-    Route::post('/posts/{post}/report', function (Request $request, \App\Models\Post $post) {
-        $request->validate([
-            'topic'   => 'required|in:spam,inappropriate,harassment,copyright,other',
-            'details' => 'nullable|string|max:500',
-        ]);
-
-        // prevent duplicate reports
-        $existing = \App\Models\Report::where('post_id', $post->id)
-            ->where('reporter_id', $request->user()->id)
-            ->first();
-
-        if ($existing) {
-            return response()->json(['message' => 'You already reported this post.'], 422);
-        }
-
-        \App\Models\Report::create([
-            'post_id'     => $post->id,
-            'reporter_id' => $request->user()->id,
-            'topic'       => $request->topic,
-            'details'     => $request->details,
-        ]);
-
-        return response()->json(['message' => 'Report submitted.']);
-    });
-
-});
-
-// ─── Admin Community Routes ────────────────────────────
-Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function () {
-
-    // Get all reports
-    Route::get('/reports', function (Request $request) {
-        $status = $request->query('status', 'all');
-        $search = $request->query('search', '');
-
-        return \App\Models\Report::with([
-            'post:id,image,caption,category,colors,user_id,likes_count,saves_count',
-            'post.user:id,name,avatar',
-            'reporter:id,name,avatar',
-        ])
-        ->when($status !== 'all', fn($q) => $q->where('status', $status))
-        ->when($search, fn($q) =>
-            $q->whereHas('reporter', fn($u) => $u->where('name', 'like', "%$search%"))
-            ->orWhereHas('post', fn($p) => $p->where('caption', 'like', "%$search%"))
-        )
-        ->latest()
-        ->paginate(20);
-    });
-
-    // Update report status
-    Route::patch('/reports/{report}/status', function (Request $request, \App\Models\Report $report) {
-        $request->validate(['status' => 'required|in:pending,reviewed,dismissed']);
-        $report->status = $request->status;
-        $report->save();
-        return response()->json(['message' => 'Report updated.']);
-    });
-
-    // Admin delete any post
-    Route::delete('/posts/{post}', function (\App\Models\Post $post) {
-        \Illuminate\Support\Facades\Storage::disk('public')->delete($post->image);
-        $post->delete();
-        return response()->json(['message' => 'Post deleted by admin.']);
-    });
-
-});
-
-// ─── User Notifications (protected) ───────────────────
-Route::middleware('auth:sanctum')->group(function () {
-
-    // Get user's server notifications
-    Route::get('/notifications', function (Request $request) {
-        return UserNotification::where('user_id', $request->user()->id)
-            ->latest()->get();
-    });
-
-    // Mark notification as read
-    Route::patch('/notifications/{notification}/read', function (Request $request, UserNotification $notification) {
-        if ($notification->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-        $notification->read_at = now();
-        $notification->save();
-        return response()->json(['message' => 'Marked as read']);
-    });
-
-    // Mark all as read
-    Route::patch('/notifications/read-all', function (Request $request) {
-        UserNotification::where('user_id', $request->user()->id)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
-        return response()->json(['message' => 'All marked as read']);
     });
 
     // Edit own post
@@ -616,157 +395,83 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json($post->load('user:id,name,avatar'));
     });
 
-});
+    // Delete own post
+    Route::delete('/posts/{post}', function (Request $request, Post $post) {
+        if ($post->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        \Illuminate\Support\Facades\Storage::disk('public')->delete($post->image);
+        $post->delete();
+        return response()->json(['message' => 'Post deleted']);
+    });
 
-// ─── Admin Warning + Stats routes ─────────────────────
-Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function () {
+    // Like / Unlike toggle
+    // ✅ FIXED: notification was after return (unreachable) — moved before return
+    Route::post('/posts/{post}/like', function (Request $request, Post $post) {
+        $existing = \App\Models\PostLike::where('post_id', $post->id)
+            ->where('user_id', $request->user()->id)
+            ->first();
 
-    // Send warning to user
-    Route::post('/warnings', function (Request $request) {
+        if ($existing) {
+            $existing->delete();
+            $post->decrement('likes_count');
+            return response()->json(['liked' => false, 'likes_count' => $post->fresh()->likes_count]);
+        }
+
+        \App\Models\PostLike::create([
+            'post_id' => $post->id,
+            'user_id' => $request->user()->id,
+        ]);
+        $post->increment('likes_count');
+
+        // ✅ Notify post owner (must be before return)
+        if ($post->user_id !== $request->user()->id) {
+            UserNotification::create([
+                'user_id' => $post->user_id,
+                'type'    => 'like',
+                'title'   => '❤️ New Like',
+                'message' => "{$request->user()->name} liked your post.",
+                'data'    => [
+                    'post_id'      => $post->id,
+                    'liker_id'     => $request->user()->id,
+                    'liker_name'   => $request->user()->name,
+                    'liker_avatar' => $request->user()->avatar,
+                    'post_image'   => $post->image,
+                ],
+            ]);
+        }
+
+        return response()->json(['liked' => true, 'likes_count' => $post->fresh()->likes_count]);
+    });
+
+    // Report post
+    Route::post('/posts/{post}/report', function (Request $request, Post $post) {
         $request->validate([
-            'user_id'         => 'required|exists:users,id',
-            'post_id'         => 'nullable|exists:posts,id',
-            'report_category' => 'required|in:spam,inappropriate,harassment,copyright,other',
-            'admin_text'      => 'nullable|string|max:500',
-            'expires_days'    => 'required|in:1,3,5',
+            'topic'   => 'required|in:spam,inappropriate,harassment,copyright,other',
+            'details' => 'nullable|string|max:500',
         ]);
 
-        $autoCaptions = [
-            'spam'          => 'Your post has been flagged for spam. Repeated violations will result in a ban.',
-            'inappropriate' => 'Your post contains inappropriate content that violates our community guidelines.',
-            'harassment'    => 'Your post has been flagged for harassment. This behavior is not tolerated.',
-            'copyright'     => 'Your post may contain copyrighted content without proper attribution.',
-            'other'         => 'Your post has been flagged for violating our community guidelines.',
-        ];
+        $existing = \App\Models\Report::where('post_id', $post->id)
+            ->where('reporter_id', $request->user()->id)
+            ->first();
 
-        $expiresAt = now()->addDays($request->expires_days);
+        if ($existing) {
+            return response()->json(['message' => 'You already reported this post.'], 422);
+        }
 
-        $warning = Warning::create([
-            'user_id'         => $request->user_id,
-            'admin_id'        => $request->user()->id,
-            'post_id'         => $request->post_id,
-            'report_category' => $request->report_category,
-            'auto_caption'    => $autoCaptions[$request->report_category],
-            'admin_text'      => $request->admin_text,
-            'expires_days'    => $request->expires_days,
-            'expires_at'      => $expiresAt,
+        \App\Models\Report::create([
+            'post_id'     => $post->id,
+            'reporter_id' => $request->user()->id,
+            'topic'       => $request->topic,
+            'details'     => $request->details,
         ]);
 
-        // Send notification to user
-        UserNotification::create([
-            'user_id' => $request->user_id,
-            'type'    => 'warning',
-            'title'   => '⚠️ Warning from Admin',
-            'message' => $autoCaptions[$request->report_category],
-            'data'    => [
-                'warning_id'      => $warning->id,
-                'report_category' => $request->report_category,
-                'auto_caption'    => $autoCaptions[$request->report_category],
-                'admin_text'      => $request->admin_text,
-                'expires_at'      => $expiresAt,
-                'expires_days'    => $request->expires_days,
-                'post_id'         => $request->post_id,
-            ],
-        ]);
-
-        return response()->json(['message' => 'Warning sent.', 'warning' => $warning]);
+        return response()->json(['message' => 'Report submitted.']);
     });
-
-    // Get daily stats for dashboard chart
-    Route::get('/stats/daily', function () {
-        $days = collect(range(6, 0))->map(function ($daysAgo) {
-            $date = now()->subDays($daysAgo);
-            return [
-                'date'     => $date->format('M d'),
-                'users'    => \App\Models\User::whereDate('created_at', $date)->count(),
-                'posts'    => Post::whereDate('created_at', $date)->count(),
-                'palettes' => \App\Models\Palette::whereDate('created_at', $date)->count(),
-            ];
-        });
-        return response()->json($days);
-    });
-
-    Route::get('/stats/monthly', function () {
-        $months = collect(range(11, 0))->map(function ($monthsAgo) {
-            $date = now()->subMonths($monthsAgo);
-            return [
-                'month'    => $date->format('M Y'),
-                'users'    => \App\Models\User::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->count(),
-                'posts'    => Post::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->count(),
-                'palettes' => \App\Models\Palette::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->count(),
-            ];
-        });
-        return response()->json($months);
-    });
-
-    // Archive yearly stats
-    Route::post('/stats/archive', function () {
-        $year = now()->subYear()->year;
-        $data = [
-            'total_users'    => \App\Models\User::whereYear('created_at', $year)->count(),
-            'total_posts'    => Post::whereYear('created_at', $year)->count(),
-            'total_palettes' => \App\Models\Palette::whereYear('created_at', $year)->count(),
-        ];
-        StatsHistory::updateOrCreate(['year' => $year], ['data' => $data]);
-        return response()->json(['message' => "Year $year archived."]);
-    });
-
-    Route::get('/stats/history', function () {
-        return StatsHistory::orderByDesc('year')->get();
-    });
-
-    // Get staff list (admins + superadmins)
-    Route::get('/staff', function () {
-        return \App\Models\User::whereIn('role', ['admin', 'superadmin'])
-            ->withCount('palettes')
-            ->get();
-    });
-
-});
-
-// Role change — super admin only
-Route::middleware(['auth:sanctum', 'isSuperAdmin'])->prefix('admin')->group(function () {
-    Route::patch('/users/{user}/role', function (Request $request, \App\Models\User $user) {
-        $request->validate(['role' => 'required|in:user,admin,superadmin']);
-        $oldRole   = $user->role;
-        $user->role = $request->role;
-        $user->save();
-
-        $roleLabels = ['user' => 'User', 'admin' => 'Admin', 'superadmin' => 'Super Admin'];
-
-        // Notify the user of role change
-        UserNotification::create([
-            'user_id' => $user->id,
-            'type'    => 'role_change',
-            'title'   => '🎉 Your role has been updated',
-            'message' => "Your role has been changed from {$roleLabels[$oldRole]} to {$roleLabels[$request->role]}.",
-            'data'    => ['old_role' => $oldRole, 'new_role' => $request->role],
-        ]);
-
-        return response()->json(['message' => 'Role updated.', 'user' => $user]);
-    });
-});
-
-// ─── Comments (public read, auth write) ───────────────
-Route::get('/posts/{post}/comments', function (\App\Models\Post $post, Request $request) {
-    return Comment::where('post_id', $post->id)
-        ->whereNull('parent_id')
-        ->with([
-            'user:id,name,avatar,role',
-            'replies.user:id,name,avatar,role',
-        ])
-        ->withCount([
-            'likes as liked_by_user' => fn($q) => $q->where('user_id', $request->user()?->id ?? 0),
-            'likes as likes_count',
-        ])
-        ->latest()
-        ->get();
-});
-
-Route::middleware('auth:sanctum')->group(function () {
 
     // Post comment
-    Route::post('/posts/{post}/comments', function (Request $request, \App\Models\Post $post) {
+    // ✅ FIXED: notification was in GET route — moved here to POST where it belongs
+    Route::post('/posts/{post}/comments', function (Request $request, Post $post) {
         $request->validate([
             'content'   => 'required|string|max:500',
             'parent_id' => 'nullable|exists:comments,id',
@@ -777,6 +482,24 @@ Route::middleware('auth:sanctum')->group(function () {
             'parent_id' => $request->parent_id,
             'content'   => $request->content,
         ]);
+
+        // Notify post owner on new comment (not on replies to avoid noise)
+        if (!$request->parent_id && $post->user_id !== $request->user()->id) {
+            UserNotification::create([
+                'user_id' => $post->user_id,
+                'type'    => 'comment',
+                'title'   => '💬 New Comment',
+                'message' => "{$request->user()->name} commented: \"{$request->content}\"",
+                'data'    => [
+                    'post_id'         => $post->id,
+                    'commenter_id'    => $request->user()->id,
+                    'commenter_name'  => $request->user()->name,
+                    'commenter_avatar'=> $request->user()->avatar,
+                    'comment_preview' => substr($request->content, 0, 50),
+                ],
+            ]);
+        }
+
         return $comment->load('user:id,name,avatar,role');
     });
 
@@ -809,7 +532,7 @@ Route::middleware('auth:sanctum')->group(function () {
             'topic'   => 'required|in:spam,inappropriate,harassment,copyright,other',
             'details' => 'nullable|string|max:500',
         ]);
-        \App\Models\CommentReport::create([
+        CommentReport::create([
             'comment_id'  => $comment->id,
             'reporter_id' => $request->user()->id,
             'topic'       => $request->topic,
@@ -818,11 +541,387 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['message' => 'Comment reported.']);
     });
 
-    // Add to api.php admin routes
+    // Get user notifications
+    Route::get('/notifications', function (Request $request) {
+        return UserNotification::where('user_id', $request->user()->id)
+            ->latest()->get();
+    });
+
+    // Mark notification as read
+    Route::patch('/notifications/{notification}/read', function (Request $request, UserNotification $notification) {
+        if ($notification->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        $notification->read_at = now();
+        $notification->save();
+        return response()->json(['message' => 'Marked as read']);
+    });
+
+    // Mark all notifications as read
+    Route::patch('/notifications/read-all', function (Request $request) {
+        UserNotification::where('user_id', $request->user()->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+        return response()->json(['message' => 'All marked as read']);
+    });
+
+    // Delete all notifications permanently
+    Route::delete('/notifications', function (Request $request) {
+        UserNotification::where('user_id', $request->user()->id)->delete();
+        return response()->json(['message' => 'Notifications cleared.']);
+    });
+
+    // Submit appeal for a warning
+    Route::post('/warnings/{warning}/appeal', function (Request $request, Warning $warning) {
+        if ($warning->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+        if ($warning->appeal) {
+            return response()->json(['message' => 'You already submitted an appeal for this warning.'], 422);
+        }
+        $request->validate([
+            'apology_text' => 'required|string|max:1000',
+            'images'       => 'nullable|array|max:5',
+            'images.*'     => 'image|max:3072',
+        ]);
+
+        $appeal = Appeal::create([
+            'warning_id'   => $warning->id,
+            'user_id'      => $request->user()->id,
+            'apology_text' => $request->apology_text,
+        ]);
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $img) {
+                $path = $img->store('appeals', 'public');
+                AppealImage::create(['appeal_id' => $appeal->id, 'image' => $path]);
+            }
+        }
+
+        $warning->status = 'reviewed';
+        $warning->save();
+
+        return response()->json($appeal->load('images'), 201);
+    });
+
+    // Get my warnings
+    Route::get('/my-warnings', function (Request $request) {
+        $warnings = Warning::where('user_id', $request->user()->id)
+            ->with(['post:id,image,caption,category,colors', 'appeal.images'])
+            ->latest()
+            ->get();
+
+        return $warnings->map(function ($w) {
+            return array_merge($w->toArray(), ['id' => $w->id]);
+        });
+    });
+
+    // Get my appeals
+    Route::get('/my-appeals', function (Request $request) {
+        return Appeal::where('user_id', $request->user()->id)
+            ->with(['warning.post', 'images', 'reviewer:id,name'])
+            ->latest()
+            ->get();
+    });
+
+    // Toggle follow/unfollow
+    Route::post('/users/{user}/follow', function (Request $request, User $user) {
+        if ($user->id === $request->user()->id) {
+            return response()->json(['message' => 'Cannot follow yourself.'], 422);
+        }
+
+        $existing = Follow::where('follower_id', $request->user()->id)
+            ->where('following_id', $user->id)->first();
+
+        if ($existing) {
+            $existing->delete();
+            return response()->json([
+                'following'       => false,
+                'followers_count' => Follow::where('following_id', $user->id)->count(),
+            ]);
+        }
+
+        Follow::create(['follower_id' => $request->user()->id, 'following_id' => $user->id]);
+
+        UserNotification::create([
+            'user_id' => $user->id,
+            'type'    => 'follow',
+            'title'   => '👤 New Follower',
+            'message' => "{$request->user()->name} started following you.",
+            'data'    => [
+                'follower_id'     => $request->user()->id,
+                'follower_name'   => $request->user()->name,
+                'follower_avatar' => $request->user()->avatar,
+            ],
+        ]);
+
+        return response()->json([
+            'following'       => true,
+            'followers_count' => Follow::where('following_id', $user->id)->count(),
+        ]);
+    });
+
+    // Get followers of a user
+    Route::get('/users/{user}/followers', function (User $user) {
+        return Follow::where('following_id', $user->id)
+            ->with('follower:id,name,avatar,role,bio')
+            ->latest()->get()
+            ->pluck('follower');
+    });
+
+    // Get users that a user follows
+    Route::get('/users/{user}/following', function (User $user) {
+        return Follow::where('follower_id', $user->id)
+            ->with('following:id,name,avatar,role,bio')
+            ->latest()->get()
+            ->pluck('following');
+    });
+
+    // Check if current user follows a specific user
+    Route::get('/users/{user}/is-following', function (Request $request, User $user) {
+        $isFollowing = Follow::where('follower_id', $request->user()->id)
+            ->where('following_id', $user->id)->exists();
+        return response()->json(['following' => $isFollowing]);
+    });
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function () {
+
+    // Dashboard stats
+    Route::get('/stats', function () {
+        return response()->json([
+            'total_users'          => User::count(),
+            'total_palettes'       => Palette::count(),
+            'total_posts'          => Post::count(),
+            'by_source'            => [
+                'image'   => Palette::where('source', 'image')->count(),
+                'keyword' => Palette::where('source', 'keyword')->count(),
+                'created' => Palette::where('source', 'created')->count(),
+            ],
+            'new_users_this_week'  => User::where('created_at', '>=', now()->subWeek())->count(),
+            'new_users_this_month' => User::where('created_at', '>=', now()->subMonth())->count(),
+        ]);
+    });
+
+    // Debug route
+    Route::get('/debug-me', function (Request $request) {
+        return response()->json([
+            'user'    => $request->user(),
+            'role'    => $request->user()?->role,
+            'isAdmin' => $request->user()?->isAdmin(),
+        ]);
+    });
+
+    // Get all users
+    Route::get('/users', function (Request $request) {
+        $search = $request->query('search', '');
+        return User::when($search, fn($q) =>
+            $q->where('name', 'like', "%$search%")
+              ->orWhere('email', 'like', "%$search%")
+        )
+        ->withCount('palettes')
+        ->latest()
+        ->get();
+    });
+
+    // Get single user
+    Route::get('/users/{user}', function (User $user) {
+        return $user->loadCount('palettes')->load('palettes');
+    });
+
+    // Ban / Unban user
+    Route::patch('/users/{user}/ban', function (Request $request, User $user) {
+        if ($user->isSuperAdmin()) {
+            return response()->json(['message' => 'Cannot ban a super admin.'], 403);
+        }
+
+        if ($user->is_banned) {
+            $user->is_banned      = false;
+            $user->ban_expires_at = null;
+            $user->ban_reason     = null;
+            $user->ban_duration   = null;
+            $user->save();
+            return response()->json(['message' => 'User unbanned.', 'is_banned' => false]);
+        }
+
+        $request->validate([
+            'duration'     => 'required|in:1d,3d,1w,1m,3m,1y,permanent',
+            'admin_reason' => 'nullable|string|max:500',
+        ]);
+
+        $durationMap = [
+            '1d'        => ['label' => '1 day',     'days' => 1],
+            '3d'        => ['label' => '3 days',     'days' => 3],
+            '1w'        => ['label' => '1 week',     'days' => 7],
+            '1m'        => ['label' => '1 month',    'days' => 30],
+            '3m'        => ['label' => '3 months',   'days' => 90],
+            '1y'        => ['label' => '1 year',     'days' => 365],
+            'permanent' => ['label' => 'permanent',  'days' => null],
+        ];
+
+        $dur       = $durationMap[$request->duration];
+        $expiresAt = $dur['days'] ? now()->addDays($dur['days']) : null;
+
+        $user->is_banned      = true;
+        $user->ban_expires_at = $expiresAt;
+        $user->ban_reason     = $request->admin_reason;
+        $user->ban_duration   = $dur['label'];
+        $user->save();
+
+        UserNotification::create([
+            'user_id' => $user->id,
+            'type'    => 'warning',
+            'title'   => '🚫 Account Banned',
+            'message' => "Your account has been banned for {$dur['label']}." . ($request->admin_reason ? " Reason: {$request->admin_reason}" : ''),
+            'data'    => [
+                'ban_duration'   => $dur['label'],
+                'ban_expires_at' => $expiresAt,
+                'admin_reason'   => $request->admin_reason,
+            ],
+        ]);
+
+        return response()->json([
+            'message'        => "User banned for {$dur['label']}.",
+            'is_banned'      => true,
+            'ban_expires_at' => $expiresAt,
+        ]);
+    });
+
+    // Direct ban from report
+    Route::post('/users/{user}/direct-ban', function (Request $request, User $user) {
+        $request->validate([
+            'report_category' => 'required|in:spam,inappropriate,harassment,copyright,other',
+            'duration'        => 'required|in:1d,3d,1w,1m,3m,1y,permanent',
+            'admin_reason'    => 'nullable|string|max:500',
+        ]);
+
+        $durationMap = [
+            '1d'        => ['label' => '1 day',    'days' => 1],
+            '3d'        => ['label' => '3 days',   'days' => 3],
+            '1w'        => ['label' => '1 week',   'days' => 7],
+            '1m'        => ['label' => '1 month',  'days' => 30],
+            '3m'        => ['label' => '3 months', 'days' => 90],
+            '1y'        => ['label' => '1 year',   'days' => 365],
+            'permanent' => ['label' => 'permanent','days' => null],
+        ];
+
+        $autoCaptions = [
+            'spam'          => 'Account banned for spam violations.',
+            'inappropriate' => 'Account banned for inappropriate content.',
+            'harassment'    => 'Account banned for harassment.',
+            'copyright'     => 'Account banned for copyright violations.',
+            'other'         => 'Account banned for community guideline violations.',
+        ];
+
+        $dur       = $durationMap[$request->duration];
+        $expiresAt = $dur['days'] ? now()->addDays($dur['days']) : null;
+
+        $user->is_banned      = true;
+        $user->ban_expires_at = $expiresAt;
+        $user->ban_reason     = $request->admin_reason ?: $autoCaptions[$request->report_category];
+        $user->ban_duration   = $dur['label'];
+        $user->save();
+
+        UserNotification::create([
+            'user_id' => $user->id,
+            'type'    => 'warning',
+            'title'   => '🚫 Account Banned',
+            'message' => $autoCaptions[$request->report_category] . " Duration: {$dur['label']}." . ($request->admin_reason ? " Admin note: {$request->admin_reason}" : ''),
+            'data'    => [
+                'ban_duration'    => $dur['label'],
+                'ban_expires_at'  => $expiresAt,
+                'report_category' => $request->report_category,
+            ],
+        ]);
+
+        return response()->json(['message' => "User banned for {$dur['label']}."]);
+    });
+
+    // Delete user
+    Route::delete('/users/{user}', function (Request $request, User $user) {
+        if ($user->isSuperAdmin()) {
+            return response()->json(['message' => 'Cannot delete a super admin.'], 403);
+        }
+        $user->tokens()->delete();
+        $user->delete();
+        return response()->json(['message' => 'User deleted.']);
+    });
+
+    // Get all palettes
+    Route::get('/palettes', function (Request $request) {
+        $search = $request->query('search', '');
+        $query  = Palette::with('user:id,name,email')->latest();
+        if ($request->query('source') && $request->query('source') !== 'all') {
+            $query->where('source', $request->query('source'));
+        }
+        if ($search) {
+            $query->where('name', 'like', "%$search%")
+                ->orWhereHas('user', fn($q) => $q->where('name', 'like', "%$search%"));
+        }
+        return $query->paginate(20);
+    });
+
+    // Delete any palette
+    Route::delete('/palettes/{palette}', function (Palette $palette) {
+        $palette->delete();
+        return response()->json(['message' => 'Palette deleted.']);
+    });
+
+    // Get all reports
+    Route::get('/reports', function (Request $request) {
+        $status = $request->query('status', 'all');
+        $search = $request->query('search', '');
+        $sort   = $request->query('sort', 'newest');
+
+        $query = \App\Models\Report::with([
+            'post:id,image,caption,category,colors,user_id,likes_count,saves_count',
+            'post.user:id,name,avatar',
+            'reporter:id,name,avatar',
+        ])
+        ->when($status !== 'all', fn($q) => $q->where('status', $status))
+        ->when($search, fn($q) =>
+            $q->whereHas('reporter', fn($u) => $u->where('name', 'like', "%$search%"))
+            ->orWhereHas('post', fn($p) => $p->where('caption', 'like', "%$search%"))
+        );
+
+        match ($sort) {
+            'oldest'     => $query->oldest(),
+            'this_week'  => $query->where('created_at', '>=', now()->startOfWeek())->latest(),
+            'last_week'  => $query->whereBetween('created_at', [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()])->latest(),
+            'last_month' => $query->where('created_at', '>=', now()->subMonth())->latest(),
+            'last_year'  => $query->where('created_at', '>=', now()->subYear())->latest(),
+            default      => $query->latest(),
+        };
+
+        return $query->paginate(20);
+    });
+
+    // Update report status
+    Route::patch('/reports/{report}/status', function (Request $request, \App\Models\Report $report) {
+        $request->validate(['status' => 'required|in:pending,reviewed,dismissed']);
+        $report->status = $request->status;
+        $report->save();
+        return response()->json(['message' => 'Report updated.']);
+    });
+
+    // Admin delete any post
+    Route::delete('/posts/{post}', function (Post $post) {
+        \Illuminate\Support\Facades\Storage::disk('public')->delete($post->image);
+        $post->delete();
+        return response()->json(['message' => 'Post deleted by admin.']);
+    });
+
+    // Get comment reports
     Route::get('/comment-reports', function (Request $request) {
         $search = $request->query('search', '');
-        
-        return \App\Models\CommentReport::with([
+        return CommentReport::with([
             'comment:id,post_id,user_id,content',
             'comment.user:id,name,avatar',
             'comment.post:id,image,caption,category,colors,user_id',
@@ -837,75 +936,113 @@ Route::middleware('auth:sanctum')->group(function () {
         ->paginate(20);
     });
 
-    // Submit appeal for a warning
-    Route::post('/warnings/{warning}/appeal', function (Request $request, \App\Models\Warning $warning) {
-    // Allow if user owns the warning OR if it's from a notification
-    if ($warning->user_id !== $request->user()->id) {
-        return response()->json(['message' => 'Unauthorized'], 403);
-    }
+    // Send warning to user
+    Route::post('/warnings', function (Request $request) {
+        $request->validate([
+            'user_id'         => 'required|exists:users,id',
+            'post_id'         => 'nullable|exists:posts,id',
+            'report_category' => 'required|in:spam,inappropriate,harassment,copyright,other',
+            'admin_text'      => 'nullable|string|max:500',
+            'expires_days'    => 'required|in:1,3,5',
+        ]);
 
-    // Check if appeal already exists
-    if ($warning->appeal) {
-        return response()->json(['message' => 'You already submitted an appeal for this warning.'], 422);
-    }
+        $autoCaptions = [
+            'spam'          => 'Your post has been flagged for spam. Repeated violations will result in a ban.',
+            'inappropriate' => 'Your post contains inappropriate content that violates our community guidelines.',
+            'harassment'    => 'Your post has been flagged for harassment. This behavior is not tolerated.',
+            'copyright'     => 'Your post may contain copyrighted content without proper attribution.',
+            'other'         => 'Your post has been flagged for violating our community guidelines.',
+        ];
 
-    $request->validate([
-        'apology_text' => 'required|string|max:1000',
-        'images'       => 'nullable|array|max:5',
-        'images.*'     => 'image|max:3072',
-    ]);
+        $expiresAt = now()->addDays($request->expires_days);
 
-    $appeal = \App\Models\Appeal::create([
-        'warning_id'   => $warning->id,
-        'user_id'      => $request->user()->id,
-        'apology_text' => $request->apology_text,
-    ]);
+        $warning = Warning::create([
+            'user_id'         => $request->user_id,
+            'admin_id'        => $request->user()->id,
+            'post_id'         => $request->post_id,
+            'report_category' => $request->report_category,
+            'auto_caption'    => $autoCaptions[$request->report_category],
+            'admin_text'      => $request->admin_text,
+            'expires_days'    => $request->expires_days,
+            'expires_at'      => $expiresAt,
+        ]);
 
-    if ($request->hasFile('images')) {
-        foreach ($request->file('images') as $img) {
-            $path = $img->store('appeals', 'public');
-            \App\Models\AppealImage::create(['appeal_id' => $appeal->id, 'image' => $path]);
-        }
-    }
+        UserNotification::create([
+            'user_id' => $request->user_id,
+            'type'    => 'warning',
+            'title'   => '⚠️ Warning from Admin',
+            'message' => $autoCaptions[$request->report_category],
+            'data'    => [
+                'warning_id'      => $warning->id,
+                'report_category' => $request->report_category,
+                'auto_caption'    => $autoCaptions[$request->report_category],
+                'admin_text'      => $request->admin_text,
+                'expires_at'      => $expiresAt,
+                'expires_days'    => $request->expires_days,
+                'post_id'         => $request->post_id,
+            ],
+        ]);
 
-    // Update warning status
-    $warning->status = 'reviewed';
-    $warning->save();
+        return response()->json(['message' => 'Warning sent.', 'warning' => $warning]);
+    });
 
-    return response()->json($appeal->load('images'), 201);
-});
-
-    // Get my warnings (with appeal status)
-    Route::get('/my-warnings', function (Request $request) {
-        $warnings = \App\Models\Warning::where('user_id', $request->user()->id)
-            ->with(['post:id,image,caption,category,colors', 'appeal.images'])
-            ->latest()
-            ->get();
-
-        // Add warning_id to each item for appeal submission
-        return $warnings->map(function($w) {
-            return array_merge($w->toArray(), ['id' => $w->id]);
+    // Daily stats
+    Route::get('/stats/daily', function () {
+        $days = collect(range(6, 0))->map(function ($daysAgo) {
+            $date = now()->subDays($daysAgo);
+            return [
+                'date'     => $date->format('M d'),
+                'users'    => User::whereDate('created_at', $date)->count(),
+                'posts'    => Post::whereDate('created_at', $date)->count(),
+                'palettes' => Palette::whereDate('created_at', $date)->count(),
+            ];
         });
+        return response()->json($days);
     });
 
-    // Get my appeals
-    Route::get('/my-appeals', function (Request $request) {
-    return \App\Models\Appeal::where('user_id', $request->user()->id)
-        ->with(['warning.post', 'images', 'reviewer:id,name'])
-        ->latest()
-        ->get();
+    // Monthly stats
+    Route::get('/stats/monthly', function () {
+        $months = collect(range(11, 0))->map(function ($monthsAgo) {
+            $date = now()->subMonths($monthsAgo);
+            return [
+                'month'    => $date->format('M Y'),
+                'users'    => User::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->count(),
+                'posts'    => Post::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->count(),
+                'palettes' => Palette::whereYear('created_at', $date->year)->whereMonth('created_at', $date->month)->count(),
+            ];
+        });
+        return response()->json($months);
     });
 
-});
+    // Archive yearly stats
+    Route::post('/stats/archive', function () {
+        $year = now()->subYear()->year;
+        $data = [
+            'total_users'    => User::whereYear('created_at', $year)->count(),
+            'total_posts'    => Post::whereYear('created_at', $year)->count(),
+            'total_palettes' => Palette::whereYear('created_at', $year)->count(),
+        ];
+        StatsHistory::updateOrCreate(['year' => $year], ['data' => $data]);
+        return response()->json(['message' => "Year $year archived."]);
+    });
 
-// ─── Admin Appeal Routes ───────────────────────────────
-Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function () {
+    // Stats history
+    Route::get('/stats/history', function () {
+        return StatsHistory::orderByDesc('year')->get();
+    });
+
+    // Staff list
+    Route::get('/staff', function () {
+        return User::whereIn('role', ['admin', 'superadmin'])
+            ->withCount('palettes')
+            ->get();
+    });
 
     // Get all appeals
     Route::get('/appeals', function (Request $request) {
         $status = $request->query('status', 'pending');
         $search = $request->query('search', '');
-        
+
         return Appeal::with(['user:id,name,avatar', 'warning', 'images', 'reviewer:id,name'])
             ->when($status !== 'all', fn($q) => $q->where('status', $status))
             ->when($search, fn($q) =>
@@ -915,7 +1052,7 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function 
             ->paginate(20);
     });
 
-    // Review appeal — accept (no ban) or reject (ban)
+    // Review appeal
     Route::patch('/appeals/{appeal}/review', function (Request $request, Appeal $appeal) {
         $request->validate([
             'decision'       => 'required|in:accept,reject',
@@ -931,16 +1068,13 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function 
         $user = $appeal->warning->user;
 
         if ($request->decision === 'reject') {
-            // Add strike
-            // Reset strikes if over 1 year
             if ($user->strikes_reset_at && now()->gt($user->strikes_reset_at)) {
                 $user->strikes = 0;
             }
             $user->strikes += 1;
             $user->strikes_reset_at = $user->strikes_reset_at ?? now()->addYear();
 
-            // Determine ban duration based on strikes
-            $banDays = match(true) {
+            $banDays = match (true) {
                 $user->strikes >= 15 => 365,
                 $user->strikes >= 10 => 30,
                 $user->strikes >= 5  => 7,
@@ -950,8 +1084,7 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function 
 
             if ($banDays) {
                 $user->is_banned = true;
-                // Store ban expiry in a notification
-                \App\Models\UserNotification::create([
+                UserNotification::create([
                     'user_id' => $user->id,
                     'type'    => 'warning',
                     'title'   => '🚫 Appeal Rejected — Account Banned',
@@ -959,7 +1092,7 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function 
                     'data'    => ['strikes' => $user->strikes, 'ban_days' => $banDays],
                 ]);
             } else {
-                \App\Models\UserNotification::create([
+                UserNotification::create([
                     'user_id' => $user->id,
                     'type'    => 'warning',
                     'title'   => '⚠️ Appeal Rejected — Strike Added',
@@ -969,20 +1102,47 @@ Route::middleware(['auth:sanctum', 'isAdmin'])->prefix('admin')->group(function 
             }
             $user->save();
         } else {
-            // Accept — no ban, notify user
-            \App\Models\UserNotification::create([
+            UserNotification::create([
                 'user_id' => $user->id,
                 'type'    => 'general',
                 'title'   => '✅ Appeal Accepted',
                 'message' => 'Your appeal has been reviewed and accepted. No further action will be taken.',
                 'data'    => ['admin_response' => $request->admin_response],
             ]);
-            // Update warning status
             $appeal->warning->status = 'reviewed';
             $appeal->warning->save();
         }
 
         return response()->json(['message' => 'Appeal reviewed.', 'appeal' => $appeal]);
+    });
+
+});
+
+/*
+|--------------------------------------------------------------------------
+| Super Admin Only
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth:sanctum', 'isSuperAdmin'])->prefix('admin')->group(function () {
+
+    Route::patch('/users/{user}/role', function (Request $request, User $user) {
+        $request->validate(['role' => 'required|in:user,admin,superadmin']);
+        $oldRole    = $user->role;
+        $user->role = $request->role;
+        $user->save();
+
+        $roleLabels = ['user' => 'User', 'admin' => 'Admin', 'superadmin' => 'Super Admin'];
+
+        UserNotification::create([
+            'user_id' => $user->id,
+            'type'    => 'role_change',
+            'title'   => '🎉 Your role has been updated',
+            'message' => "Your role has been changed from {$roleLabels[$oldRole]} to {$roleLabels[$request->role]}.",
+            'data'    => ['old_role' => $oldRole, 'new_role' => $request->role],
+        ]);
+
+        return response()->json(['message' => 'Role updated.', 'user' => $user]);
     });
 
 });

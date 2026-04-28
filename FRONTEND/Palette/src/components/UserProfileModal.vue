@@ -10,21 +10,68 @@
 
       <template v-else-if="profile">
         <!-- Header -->
-        <div class="bg-[#0d1117] rounded-t-2xl p-6 flex items-center gap-5 relative">
-          <button @click="$emit('close')" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg">✕</button>
-          <div class="w-20 h-20 rounded-full bg-indigo-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden shrink-0">
-            <img v-if="profile.user.avatar" :src="`http://localhost:8000/storage/${profile.user.avatar}`" class="w-full h-full object-cover" />
-            <span v-else>{{ profile.user.name?.charAt(0).toUpperCase() }}</span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-              <h2 class="text-white text-xl font-bold">{{ profile.user.name }}</h2>
-              <span class="w-2 h-2 rounded-full" :class="roleColor(profile.user.role)"></span>
-              <span class="text-xs" :class="roleLabelClass(profile.user.role)">{{ profile.user.role }}</span>
+        <div class="bg-[#0d1117] rounded-t-2xl relative overflow-hidden">
+          <!-- Decorative background gradient -->
+          <div class="absolute inset-0 opacity-30" style="background: radial-gradient(ellipse at top right, #6366f1, transparent 60%), radial-gradient(ellipse at bottom left, #f97316, transparent 60%)"></div>
+
+          <!-- Close button -->
+          <button @click="$emit('close')" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg z-10">✕</button>
+
+          <!-- Main header content -->
+          <div class="relative z-10 p-6 flex gap-5">
+
+            <!-- Avatar -->
+            <div class="w-20 h-20 rounded-full bg-indigo-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden shrink-0 ring-4 ring-white/10">
+              <img v-if="profile.user.avatar" :src="`http://localhost:8000/storage/${profile.user.avatar}`" class="w-full h-full object-cover" />
+              <span v-else>{{ profile.user.name?.charAt(0).toUpperCase() }}</span>
             </div>
-            <p class="text-gray-400 text-sm mt-0.5 break-words">{{ profile.user.email }}</p>
-            <p class="text-gray-400 text-sm mt-1">{{ profile.user.bio || 'No bio yet.' }}</p>
-            <p class="text-gray-600 text-xs mt-1">Member since {{ formatDateLong(profile.user.created_at) }}</p>
+
+            <!-- Left info — name, role, email, bio -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h2 class="text-white text-xl font-bold">{{ profile.user.name }}</h2>
+                <span class="w-2 h-2 rounded-full shrink-0" :class="roleColor(profile.user.role)"></span>
+                <span class="text-xs font-medium px-2 py-0.5 rounded-full" :class="{
+                  'bg-red-500/20 text-red-400': profile.user.role === 'superadmin',
+                  'bg-blue-500/20 text-blue-400': profile.user.role === 'admin',
+                  'bg-green-500/20 text-green-400': profile.user.role === 'user',
+                }">{{ profile.user.role }}</span>
+              </div>
+              <p class="text-gray-400 text-sm mt-0.5">{{ profile.user.email }}</p>
+              <p v-if="profile.user.bio" class="text-gray-300 text-sm mt-1.5 leading-relaxed line-clamp-2" style="white-space: pre-wrap; word-break: break-word;">{{ profile.user.bio }}</p>
+              <p v-else class="text-gray-500 text-sm mt-1.5 italic">No bio yet.</p>
+              <p class="text-gray-600 text-xs mt-1.5">Member since {{ formatDateLong(profile.user.created_at) }}</p>
+            </div>
+
+            <!-- Right side — follow stats + button -->
+            <div class="shrink-0 flex flex-col items-end justify-between gap-3 pr-6">
+              <!-- Follow button -->
+              <button
+                v-if="currentUserId && currentUserId !== profile.user.id"
+                @click="toggleFollow"
+                :disabled="followLoading"
+                class="px-5 py-2 rounded-xl text-sm font-semibold transition mt-1"
+                :class="isFollowing
+                  ? 'bg-white/10 text-white hover:bg-red-500/20 hover:text-red-300 border border-white/20'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-500'"
+              >
+                {{ followLoading ? '...' : isFollowing ? 'Unfollow' : '+ Follow' }}
+              </button>
+              <div v-else class="mt-1 h-8"></div>
+
+              <!-- Follower / Following counts -->
+              <div class="flex items-center gap-5">
+                <button @click="openFollowers" class="text-center hover:opacity-70 transition group">
+                  <p class="text-white text-lg font-bold group-hover:text-indigo-300 transition">{{ profile.user.followers_count || 0 }}</p>
+                  <p class="text-gray-400 text-xs">Followers</p>
+                </button>
+                <div class="w-px h-8 bg-white/10"></div>
+                <button @click="openFollowing" class="text-center hover:opacity-70 transition group">
+                  <p class="text-white text-lg font-bold group-hover:text-indigo-300 transition">{{ profile.user.following_count || 0 }}</p>
+                  <p class="text-gray-400 text-xs">Following</p>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -100,6 +147,60 @@
     </div>
   </div>
 
+  <!-- Followers Modal -->
+  <div v-if="showFollowers" class="fixed inset-0 z-[80] bg-black/70 flex items-center justify-center px-4" @click.self="showFollowers = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm max-h-[70vh] flex flex-col overflow-hidden animate-fade-in-up">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+        <h2 class="text-base font-semibold text-gray-800 dark:text-white">Followers</h2>
+        <button @click="showFollowers = false" class="text-gray-400 hover:text-gray-600">✕</button>
+      </div>
+      <div class="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div v-if="followListLoading" class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-gray-300 border-t-indigo-600 rounded-full animate-spin"></div></div>
+        <div v-else-if="!followersList.length" class="text-center py-8 text-gray-400 text-sm">No followers yet</div>
+        <div v-else class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
+          <div v-for="person in followersList" :key="person.id" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
+              <img v-if="person.avatar" :src="`http://localhost:8000/storage/${person.avatar}`" class="w-full h-full object-cover" />
+              <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{{ person.name }}</p>
+              <p class="text-xs text-gray-400 truncate" style="white-space: pre-wrap; word-break: break-word;">{{ person.bio || 'No bio' }}</p>
+            </div>
+            <span class="w-2 h-2 rounded-full shrink-0" :class="person.role === 'superadmin' ? 'bg-red-500' : person.role === 'admin' ? 'bg-blue-500' : 'bg-green-500'"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Following Modal -->
+  <div v-if="showFollowing" class="fixed inset-0 z-[80] bg-black/70 flex items-center justify-center px-4" @click.self="showFollowing = false">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm max-h-[70vh] flex flex-col overflow-hidden animate-fade-in-up">
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+        <h2 class="text-base font-semibold text-gray-800 dark:text-white">Following</h2>
+        <button @click="showFollowing = false" class="text-gray-400 hover:text-gray-600">✕</button>
+      </div>
+      <div class="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div v-if="followListLoading" class="flex justify-center py-8"><div class="w-6 h-6 border-2 border-gray-300 border-t-indigo-600 rounded-full animate-spin"></div></div>
+        <div v-else-if="!followingList.length" class="text-center py-8 text-gray-400 text-sm">Not following anyone yet</div>
+        <div v-else class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
+          <div v-for="person in followingList" :key="person.id" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
+              <img v-if="person.avatar" :src="`http://localhost:8000/storage/${person.avatar}`" class="w-full h-full object-cover" />
+              <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{{ person.name }}</p>
+              <p class="text-xs text-gray-400 truncate" style="white-space: pre-wrap; word-break: break-word;">{{ person.bio || 'No bio' }}</p>
+            </div>
+            <span class="w-2 h-2 rounded-full shrink-0" :class="person.role === 'superadmin' ? 'bg-red-500' : person.role === 'admin' ? 'bg-blue-500' : 'bg-green-500'"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ─── Sub-post view modal (full Community style) ─── -->
   <div v-if="activeSubPost" class="fixed inset-0 z-[70] bg-black/70 flex items-center justify-center px-4" @click.self="activeSubPost = null">
     <div
@@ -142,7 +243,7 @@
             <span v-if="activeSubPost.post_type === 'palette'" class="inline-block bg-orange-50 dark:bg-orange-900/40 text-orange-500 text-xs px-2.5 py-1 rounded-full">🎨 Palette</span>
             <span v-else class="inline-block bg-teal-50 dark:bg-teal-900/40 text-teal-500 text-xs px-2.5 py-1 rounded-full">🎭 Creation</span>
           </div>
-          <p v-if="activeSubPost.caption" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{{ activeSubPost.caption }}</p>
+          <p v-if="activeSubPost.caption" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed" style="white-space: pre-wrap; word-break: break-word;">{{ activeSubPost.caption }}</p>
         </div>
 
         <!-- Palette colors — fixed -->
@@ -177,7 +278,7 @@
               <div class="flex-1 min-w-0">
                 <div class="bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
                   <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">{{ comment.user?.name }}</p>
-                  <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5 break-words">{{ comment.content }}</p>
+                  <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5 break-words" style="white-space: pre-wrap; word-break: break-word;">{{ comment.content }}</p>
                 </div>
                 <div class="flex items-center gap-3 mt-1 px-1">
                   <button @click="toggleSubCommentLike(comment)" class="text-xs transition" :class="comment.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">
@@ -197,7 +298,7 @@
                     <div class="flex-1 min-w-0">
                       <div class="bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
                         <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">{{ reply.user?.name }}</p>
-                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5 break-words">{{ reply.content }}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5 break-words" style="white-space: pre-wrap; word-break: break-word;">{{ reply.content }}</p>
                       </div>
                       <div class="flex items-center gap-3 mt-1 px-1">
                         <button @click="toggleSubCommentLike(reply)" class="text-xs transition" :class="reply.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">❤️ {{ reply.likes_count }}</button>
@@ -280,7 +381,7 @@
         </label>
       </div>
       <textarea v-model="subReport.details" placeholder="Details (optional)" rows="2"
-        class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none"></textarea>
+        class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style="white-space: pre-wrap; word-break: break-word;"></textarea>
       <p v-if="subReportMsg" class="text-xs" :class="subReportMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ subReportMsg }}</p>
       <div class="flex gap-3">
         <button @click="subReportTarget = null" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
@@ -293,6 +394,21 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import axios from 'axios'
+import { useAuth } from '../composables/useAuth'
+
+const { user: authUser } = useAuth()
+const currentUserId = computed(() => authUser.value?.id)
+
+// Follow
+const isFollowing   = ref(false)
+const followLoading = ref(false)
+
+// Followers/Following modals
+const showFollowers     = ref(false)
+const showFollowing     = ref(false)
+const followersList     = ref([])
+const followingList     = ref([])
+const followListLoading = ref(false)
 
 const props = defineProps({ userId: { type: Number, required: true } })
 defineEmits(['close'])
@@ -303,16 +419,16 @@ const tab = ref('posts')
 
 // Sub-post modal
 const activeSubPost = ref(null)
-const subComments = ref([])
+const subComments   = ref([])
 const newSubComment = ref('')
 const subReplyTarget = ref(null)
-const subReplyText = ref('')
-const copiedHex = ref('')
+const subReplyText   = ref('')
+const copiedHex      = ref('')
 
 // Sub-post report
 const subReportTarget = ref(null)
-const subReport = ref({ topic: '', details: '' })
-const subReportMsg = ref('')
+const subReport       = ref({ topic: '', details: '' })
+const subReportMsg    = ref('')
 
 const subCommentInputRef = ref(null)
 
@@ -331,9 +447,41 @@ onMounted(async () => {
   try {
     const { data } = await axios.get(`/api/users/${props.userId}/profile`)
     profile.value = data
+    isFollowing.value = data.user?.is_following || false
   } catch (e) { console.error(e) }
   finally { loading.value = false }
 })
+
+async function toggleFollow() {
+  if (!profile.value) return
+  followLoading.value = true
+  try {
+    const { data } = await axios.post(`/api/users/${profile.value.user.id}/follow`)
+    isFollowing.value = data.following
+    profile.value.user.followers_count = data.followers_count
+  } catch (e) { console.error(e) }
+  finally { followLoading.value = false }
+}
+
+async function openFollowers() {
+  showFollowers.value = true
+  followListLoading.value = true
+  try {
+    const { data } = await axios.get(`/api/users/${profile.value.user.id}/followers`)
+    followersList.value = data
+  } catch (e) { console.error(e) }
+  finally { followListLoading.value = false }
+}
+
+async function openFollowing() {
+  showFollowing.value = true
+  followListLoading.value = true
+  try {
+    const { data } = await axios.get(`/api/users/${profile.value.user.id}/following`)
+    followingList.value = data
+  } catch (e) { console.error(e) }
+  finally { followListLoading.value = false }
+}
 
 async function openSubPost(post) {
   activeSubPost.value = { ...post }
@@ -351,7 +499,6 @@ async function toggleSubLike(post) {
     const { data } = await axios.post(`/api/posts/${post.id}/like`)
     post.liked_by_user = data.liked ? 1 : 0
     post.likes_count = data.likes_count
-    // sync in profile list
     const p = profile.value?.posts?.find(p => p.id === post.id)
     if (p) { p.liked_by_user = post.liked_by_user; p.likes_count = post.likes_count }
   } catch (e) { console.error(e) }

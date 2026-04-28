@@ -68,7 +68,7 @@
           </div>
           <div class="px-5 py-4 flex-1">
             <span class="inline-block bg-indigo-50 dark:bg-indigo-900/40 text-indigo-500 text-xs px-2.5 py-1 rounded-full mb-3">{{ activePost.category }}</span>
-            <p v-if="activePost.caption" class="text-sm text-gray-600 dark:text-gray-300">{{ activePost.caption }}</p>
+            <p v-if="activePost.caption" class="text-sm text-gray-600 dark:text-gray-300" style="white-space: pre-wrap; word-break: break-word;">{{ activePost.caption }}</p>
           </div>
           <div v-if="activePost.colors && activePost.colors.length" class="px-5 pb-4">
             <p class="text-xs text-gray-400 uppercase tracking-widest mb-2">Palette</p>

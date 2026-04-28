@@ -68,7 +68,7 @@
                 </td>
                 <td class="px-6 py-4 text-right">
                   <div class="flex items-center justify-end gap-2">
-                    <button v-if="u.role !== 'superadmin'" @click="toggleBan(u)" class="text-xs px-3 py-1.5 rounded-full border transition" :class="u.is_banned ? 'border-green-200 text-green-500 hover:border-green-400' : 'border-amber-200 text-amber-500 hover:border-amber-400'">{{ u.is_banned ? 'Unban' : 'Ban' }}</button>
+                    <button v-if="u.role !== 'superadmin'" @click="openBanModal(u)" class="text-xs px-3 py-1.5 rounded-full border transition" :class="u.is_banned ? 'border-green-200 text-green-500 hover:border-green-400' : 'border-amber-200 text-amber-500 hover:border-amber-400'">{{ u.is_banned ? 'Unban' : 'Ban' }}</button>
                     <button v-if="u.role !== 'superadmin'" @click="confirmDelete(u)" class="text-xs px-3 py-1.5 rounded-full border border-red-200 text-red-400 hover:border-red-400 transition">Delete</button>
                     <span v-if="u.role === 'superadmin'" class="text-xs text-gray-400 italic">Protected</span>
                   </div>
@@ -81,6 +81,46 @@
       </div>
 
       <p v-if="msg" class="text-xs text-center" :class="msg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ msg }}</p>
+    </div>
+
+    <!-- Ban Duration Modal -->
+    <div v-if="banTarget" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-semibold text-gray-800 dark:text-white">Ban {{ banTarget.name }}</h2>
+          <button @click="banTarget = null" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+
+        <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
+          <p class="text-xs text-amber-700 dark:text-amber-400">This will prevent the user from logging in until the ban expires.</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 uppercase tracking-widest mb-2">Ban Duration</p>
+          <div class="grid grid-cols-3 gap-2">
+            <button v-for="d in banDurations" :key="d.value" @click="banForm.duration = d.value"
+              class="py-2.5 rounded-xl border text-xs font-medium transition text-center"
+              :class="banForm.duration === d.value ? 'bg-red-500 text-white border-red-500' : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:border-red-300'"
+            >{{ d.label }}</button>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Admin Note (optional)</p>
+          <textarea v-model="banForm.admin_reason" placeholder="Reason for ban..." rows="2"
+            class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none transition" style="white-space: pre-wrap; word-break: break-word;"></textarea>
+        </div>
+
+        <p v-if="banMsg" class="text-xs" :class="banMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ banMsg }}</p>
+
+        <div class="flex gap-3">
+          <button @click="banTarget = null" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
+          <button @click="executeBan" :disabled="!banForm.duration || banning"
+            class="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium disabled:opacity-40 hover:bg-red-600 transition">
+            {{ banning ? 'Banning...' : '🚫 Ban User' }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- ─── User Profile Modal (shared component) ─── -->
@@ -117,7 +157,21 @@ const loading = ref(true)
 const search = ref('')
 const msg = ref('')
 const deleteTarget = ref(null)
+const banTarget  = ref(null)
+const banMsg     = ref('')
+const banning    = ref(false)
+const banForm    = ref({ duration: '', admin_reason: '' })
 const selectedUserId = ref(null)
+
+const banDurations = [
+  { value: '1d', label: '1 Day'     },
+  { value: '3d', label: '3 Days'    },
+  { value: '1w', label: '1 Week'    },
+  { value: '1m', label: '1 Month'   },
+  { value: '3m', label: '3 Months'  },
+  { value: '1y', label: '1 Year'    },
+  { value: 'permanent', label: 'Permanent' },
+]
 
 onMounted(fetchUsers)
 
@@ -130,13 +184,44 @@ async function fetchUsers() {
   finally { loading.value = false }
 }
 
-async function toggleBan(u) {
+function openBanModal(u) {
+  // If already banned, unban immediately
+  if (u.is_banned) {
+    toggleUnban(u)
+    return
+  }
+  banTarget.value = u
+  banForm.value = { duration: '1d', admin_reason: '' }
+  banMsg.value = ''
+}
+
+async function toggleUnban(u) {
   try {
     const { data } = await axios.patch(`/api/admin/users/${u.id}/ban`)
     u.is_banned = data.is_banned
     msg.value = `✓ ${data.message}`
     setTimeout(() => msg.value = '', 3000)
   } catch (e) { msg.value = e?.response?.data?.message || 'Failed.' }
+}
+
+async function executeBan() {
+  if (!banForm.value.duration) return
+  banning.value = true
+  banMsg.value  = ''
+  try {
+    await axios.patch(`/api/admin/users/${banTarget.value.id}/ban`, {
+      duration:     banForm.value.duration,
+      admin_reason: banForm.value.admin_reason,
+    })
+    banTarget.value.is_banned = true
+    msg.value = `✓ User banned.`
+    banTarget.value = null
+    setTimeout(() => msg.value = '', 3000)
+  } catch (e) {
+    banMsg.value = e?.response?.data?.message || 'Failed.'
+  } finally {
+    banning.value = false
+  }
 }
 
 function confirmDelete(u) { deleteTarget.value = u }

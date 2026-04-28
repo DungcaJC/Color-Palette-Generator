@@ -26,6 +26,22 @@
           @input="fetchReports"
         />
 
+        <div class="relative" ref="sortDropRef">
+          <button @click="sortDropOpen = !sortDropOpen"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300 hover:border-indigo-400 transition min-w-36">
+            <span>{{ sortLabels[sortBy] }}</span>
+            <svg class="w-4 h-4 ml-auto transition-transform" :class="sortDropOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div v-if="sortDropOpen" class="absolute z-10 mt-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl overflow-hidden">
+            <button v-for="opt in sortOptions" :key="opt.value" @click="sortBy = opt.value; sortDropOpen = false; fetchReports()"
+              class="w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2"
+              :class="sortBy === opt.value ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            ><span>{{ opt.icon }}</span> {{ opt.label }}</button>
+          </div>
+        </div>
+
         <!-- Report type dropdown -->
         <div class="relative" ref="typeDropRef">
           <button
@@ -52,15 +68,22 @@
         </div>
 
         <!-- Status tabs -->
-        <div class="flex gap-1.5 flex-wrap">
-          <button
-            v-for="tab in tabs" :key="tab.value"
-            @click="activeTab = tab.value; fetchReports()"
-            class="px-3 py-2 rounded-xl text-xs font-medium border transition"
-            :class="activeTab === tab.value
-              ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white'
-              : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:border-gray-400'"
-          >{{ tab.label }}</button>
+        <!-- Replace status tabs div with this dropdown -->
+        <div class="relative" ref="statusDropRef">
+          <button @click="statusDropOpen = !statusDropOpen"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 text-sm text-gray-600 dark:text-gray-300 hover:border-indigo-400 transition min-w-32">
+            <span class="w-2 h-2 rounded-full" :class="{ 'bg-gray-400': activeTab === 'all', 'bg-yellow-400': activeTab === 'pending', 'bg-green-400': activeTab === 'reviewed', 'bg-gray-300': activeTab === 'dismissed' }"></span>
+            <span>{{ tabs.find(t => t.value === activeTab)?.label }}</span>
+            <svg class="w-4 h-4 ml-auto transition-transform" :class="statusDropOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div v-if="statusDropOpen" class="absolute z-10 mt-1 w-36 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl overflow-hidden right-0">
+            <button v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value; statusDropOpen = false; fetchReports()"
+              class="w-full text-left px-4 py-2.5 text-sm transition flex items-center gap-2"
+              :class="activeTab === tab.value ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'"
+            >{{ tab.label }}</button>
+          </div>
         </div>
       </div>
 
@@ -90,14 +113,14 @@
                     <div class="flex items-center gap-2 mb-1 flex-wrap">
                       <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-900/30 text-orange-500">📄 Post</span>
                       <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="topicColor(report.topic)">{{ topicLabel(report.topic) }}</span>
-                      <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="statusColor(report.status)">{{ report.status }}</span>
+                      <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="statusColor(report.status || 'pending')">{{ report.status || 'pending' }}</span>
                     </div>
                     <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">
                       <span class="font-medium text-indigo-500 cursor-pointer hover:text-indigo-700 transition" @click="selectedUserId = report.reporter?.id">{{ report.reporter?.name }}</span>
                       reported a post by
                       <span class="font-medium text-indigo-500 cursor-pointer hover:text-indigo-700 transition" @click="selectedUserId = report.post?.user?.id">{{ report.post?.user?.name }}</span>
                     </p>
-                    <p v-if="report.details" class="text-xs text-gray-400 italic mb-1">"{{ report.details }}"</p>
+                    <p v-if="report.details" class="text-xs text-gray-400 italic mb-1" style="white-space: pre-wrap; word-break: break-word;">"{{ report.details }}"</p>
                     <p class="text-xs text-gray-400">{{ formatDate(report.created_at) }}</p>
                   </div>
 
@@ -109,6 +132,7 @@
                       <option value="dismissed">Dismissed</option>
                     </select>
                     <button @click="openWarningModal(report)" class="text-xs text-amber-500 hover:text-amber-700 border border-amber-200 hover:border-amber-400 px-3 py-1.5 rounded-lg transition">⚠️ Warning</button>
+                    <button @click="openDirectBan(report)" class="text-xs text-red-600 hover:text-red-800 border border-red-300 hover:border-red-500 px-3 py-1.5 rounded-lg transition">🚫 Ban User</button>
                     <button @click="deleteReportedPost(report)" class="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1.5 rounded-lg transition">Delete Post</button>
                   </div>
                 </div>
@@ -131,6 +155,7 @@
                   <div class="flex items-center gap-2 mb-2 flex-wrap">
                     <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-500">💬 Comment</span>
                     <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="topicColor(report.topic)">{{ topicLabel(report.topic) }}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="statusColor(report.status || 'pending')">{{ report.status || 'pending' }}</span>
                   </div>
 
                   <!-- Reported comment content -->
@@ -142,7 +167,9 @@
                       </div>
                       <span class="text-xs font-semibold text-indigo-500 cursor-pointer hover:text-indigo-700" @click="selectedUserId = report.comment?.user?.id">{{ report.comment?.user?.name }}</span>
                     </div>
-                    <p class="text-sm text-gray-600 dark:text-gray-300">{{ report.comment?.content }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-300" style="white-space: pre-wrap; word-break: break-word;">
+                      {{ report.comment?.content }}
+                    </p>
                   </div>
 
                   <!-- Post it belongs to -->
@@ -151,7 +178,9 @@
                       <img v-if="report.comment.post.image" :src="`http://localhost:8000/storage/${report.comment.post.image}`" class="w-full h-full object-cover" />
                       <div v-else class="w-full h-full flex items-center justify-center text-xs">🎨</div>
                     </div>
-                    <p class="text-xs text-gray-400">in: {{ report.comment.post.caption?.slice(0, 40) || report.comment.post.category }}</p>
+                    <p class="text-xs text-gray-400" style="white-space: pre-wrap; word-break: break-word;">
+                      in: {{ report.comment.post.caption?.slice(0, 40) || report.comment.post.category }}
+                    </p>
                   </div>
 
                   <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -163,6 +192,8 @@
 
                 <div class="flex flex-col gap-2 shrink-0">
                   <button @click="deleteReportedComment(report)" class="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1.5 rounded-lg transition">Delete Comment</button>
+                  <button @click="openCommentWarning(report)" class="text-xs text-amber-500 hover:text-amber-700 border border-amber-200 hover:border-amber-400 px-3 py-1.5 rounded-lg transition">⚠️ Warning</button>
+                  <button @click="openDirectBanComment(report)" class="text-xs text-red-600 hover:text-red-800 border border-red-300 hover:border-red-500 px-3 py-1.5 rounded-lg transition">🚫 Ban</button>
                   <button @click="dismissCommentReport(report)" class="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-400 px-3 py-1.5 rounded-lg transition">Dismiss</button>
                 </div>
               </div>
@@ -203,7 +234,9 @@
           </div>
           <div class="px-5 py-4 flex-1">
             <span class="inline-block bg-indigo-50 dark:bg-indigo-900/40 text-indigo-500 text-xs px-2.5 py-1 rounded-full mb-3">{{ activePost.category }}</span>
-            <p v-if="activePost.caption" class="text-sm text-gray-600 dark:text-gray-300">{{ activePost.caption }}</p>
+            <p v-if="activePost.caption" class="text-sm text-gray-600 dark:text-gray-300" style="white-space: pre-wrap; word-break: break-word;">
+              {{ activePost.caption }}
+            </p>
           </div>
           <div v-if="activePost.colors && activePost.colors.length" class="px-5 pb-4">
             <div class="flex gap-1 h-8 rounded-xl overflow-hidden">
@@ -252,7 +285,7 @@
         <div>
           <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Additional message (optional)</p>
           <textarea v-model="warningForm.admin_text" placeholder="Personal note..." rows="2"
-            class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none transition"></textarea>
+            class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none transition" style="white-space: pre-wrap; word-break: break-word;"></textarea>
         </div>
 
         <p v-if="warningMsg" class="text-xs" :class="warningMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ warningMsg }}</p>
@@ -267,6 +300,51 @@
       </div>
     </div>
 
+    <!-- Direct Ban Modal -->
+    <div v-if="directBanTarget" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-semibold text-gray-800 dark:text-white">🚫 Direct Ban</h2>
+          <button @click="directBanTarget = null" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+
+        <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
+          <p class="text-xs text-red-600 font-medium">Banning: <span class="font-bold">{{ directBanTarget.post?.user?.name || directBanTarget.comment?.user?.name }}</span></p>
+          <p class="text-xs text-red-500 mt-0.5">Report: {{ topicLabel(directBanTarget.topic) }}</p>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Auto Ban Message</p>
+          <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-sm text-gray-600 dark:text-gray-300">{{ autoCaptions[directBanTarget.topic] }}</div>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 uppercase tracking-widest mb-2">Ban Duration</p>
+          <div class="grid grid-cols-3 gap-2">
+            <button v-for="d in banDurations" :key="d.value" @click="directBanForm.duration = d.value"
+              class="py-2 rounded-xl border text-xs font-medium transition text-center"
+              :class="directBanForm.duration === d.value ? 'bg-red-500 text-white border-red-500' : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:border-red-300'"
+            >{{ d.label }}</button>
+          </div>
+        </div>
+
+        <div>
+          <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Admin Note (optional)</p>
+          <textarea v-model="directBanForm.admin_reason" placeholder="Reason..." rows="2"
+            class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none transition" style="white-space: pre-wrap; word-break: break-word;"></textarea>
+        </div>
+
+        <p v-if="directBanMsg" class="text-xs" :class="directBanMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ directBanMsg }}</p>
+
+        <div class="flex gap-3">
+          <button @click="directBanTarget = null" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
+          <button @click="executeDirectBan" :disabled="!directBanForm.duration || directBanning"
+            class="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium disabled:opacity-40 hover:bg-red-600 transition">
+            {{ directBanning ? 'Banning...' : '🚫 Execute Ban' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -290,16 +368,52 @@ const warningMsg = ref('')
 const sendingWarning = ref(false)
 const typeDropOpen = ref(false)
 const typeDropRef = ref(null)
+const sortBy         = ref('newest')
+const sortDropOpen   = ref(false)
+const sortDropRef    = ref(null)
+const statusDropOpen = ref(false)
+const statusDropRef  = ref(null)
+const directBanTarget = ref(null)
+const directBanForm   = ref({ duration: '1d', admin_reason: '' })
+const directBanMsg    = ref('')
+const directBanning   = ref(false)
+
+const sortOptions = [
+  { value: 'newest',     icon: '🆕', label: 'Newest'      },
+  { value: 'oldest',     icon: '📅', label: 'Oldest'      },
+  { value: 'this_week',  icon: '📆', label: 'This Week'   },
+  { value: 'last_week',  icon: '📆', label: 'Last Week'   },
+  { value: 'last_month', icon: '📆', label: 'Last Month'  },
+  { value: 'last_year',  icon: '📆', label: 'Last Year'   },
+]
+
+const sortLabels = {
+  newest: '🆕 Newest', oldest: '📅 Oldest',
+  this_week: '📆 This Week', last_week: '📆 Last Week',
+  last_month: '📆 Last Month', last_year: '📆 Last Year',
+}
+
+const banDurations = [
+  { value: '1d', label: '1 Day' }, { value: '3d', label: '3 Days' },
+  { value: '1w', label: '1 Week' }, { value: '1m', label: '1 Month' },
+  { value: '3m', label: '3 Months' }, { value: '1y', label: '1 Year' },
+  { value: 'permanent', label: 'Permanent' },
+]
 
 // Close dropdown on outside click
 import { onBeforeUnmount } from 'vue'
+
 function handleClickOutside(e) {
-  if (typeDropRef.value && !typeDropRef.value.contains(e.target)) typeDropOpen.value = false
+  if (typeDropRef.value && !typeDropRef.value.contains(e.target))     typeDropOpen.value   = false
+  if (sortDropRef.value && !sortDropRef.value.contains(e.target))     sortDropOpen.value   = false
+  if (statusDropRef.value && !statusDropRef.value.contains(e.target)) statusDropOpen.value = false
 }
+
 onMounted(() => {
   document.addEventListener('mousedown', handleClickOutside)
   fetchReports()
 })
+
 onBeforeUnmount(() => document.removeEventListener('mousedown', handleClickOutside))
 
 const tabs = [
@@ -332,7 +446,7 @@ const autoCaptions = {
 async function fetchReports() {
   loading.value = true
   try {
-    const params = new URLSearchParams({ status: activeTab.value })
+    const params = new URLSearchParams({ status: activeTab.value, sort: sortBy.value })
     if (search.value) params.set('search', search.value)
 
     if (reportType.value !== 'comment') {
@@ -435,5 +549,47 @@ function statusColor(status) {
 function formatDate(iso) {
   if (!iso) return '-'
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function openDirectBan(report) {
+  directBanTarget.value = report
+  directBanForm.value   = { duration: '1d', admin_reason: '' }
+  directBanMsg.value    = ''
+}
+
+function openDirectBanComment(report) {
+  // Adapt for comment report
+  directBanTarget.value = { ...report, post: { user: report.comment?.user } }
+  directBanForm.value   = { duration: '1d', admin_reason: '' }
+  directBanMsg.value    = ''
+}
+
+async function executeDirectBan() {
+  directBanning.value = true
+  directBanMsg.value  = ''
+  const userId = directBanTarget.value.post?.user?.id || directBanTarget.value.comment?.user?.id
+  try {
+    await axios.post(`/api/admin/users/${userId}/direct-ban`, {
+      report_category: directBanTarget.value.topic,
+      duration:        directBanForm.value.duration,
+      admin_reason:    directBanForm.value.admin_reason,
+    })
+    directBanMsg.value = '✓ User banned!'
+    setTimeout(() => { directBanTarget.value = null }, 2000)
+  } catch (e) {
+    directBanMsg.value = e?.response?.data?.message || 'Failed.'
+  } finally {
+    directBanning.value = false
+  }
+}
+
+function openCommentWarning(report) {
+  // Reuse the existing warning modal but for comment author
+  warningTarget.value = {
+    ...report,
+    post: { user: report.comment?.user, id: report.comment?.post_id }
+  }
+  warningForm.value = { expires_days: 1, admin_text: '' }
+  warningMsg.value  = ''
 }
 </script>

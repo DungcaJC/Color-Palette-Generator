@@ -171,7 +171,42 @@
                         @click="openServerNotif(notif)"
                         class="flex items-start gap-3 px-4 py-3 cursor-pointer border-b border-white/5 transition hover:bg-white/5"
                         :class="!notif.read_at ? 'bg-indigo-950/40' : ''">
-                        <span class="text-lg shrink-0 mt-0.5">{{ notif.type === 'warning' ? '⚠️' : '🎉' }}</span>
+                        <div class="shrink-0 mt-0.5">
+                          <!-- Follow: show follower's avatar -->
+                          <template v-if="notif.type === 'follow' && notif.data?.follower_avatar">
+                            <div class="w-8 h-8 rounded-full overflow-hidden bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                              <img :src="`http://localhost:8000/storage/${notif.data.follower_avatar}`" class="w-full h-full object-cover" />
+                            </div>
+                          </template>
+                          <template v-else-if="notif.type === 'follow' && !notif.data?.follower_avatar">
+                            <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                              {{ notif.data?.follower_name?.charAt(0).toUpperCase() || '?' }}
+                            </div>
+                          </template>
+                          <!-- Like: show liker's avatar -->
+                          <template v-else-if="notif.type === 'like' && notif.data?.liker_avatar">
+                            <div class="w-8 h-8 rounded-full overflow-hidden bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                              <img :src="`http://localhost:8000/storage/${notif.data.liker_avatar}`" class="w-full h-full object-cover" />
+                            </div>
+                          </template>
+                          <template v-else-if="notif.type === 'like'">
+                            <div class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-lg">❤️</div>
+                          </template>
+                          <!-- Comment: show commenter's avatar -->
+                          <template v-else-if="notif.type === 'comment' && notif.data?.commenter_avatar">
+                            <div class="w-8 h-8 rounded-full overflow-hidden bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
+                              <img :src="`http://localhost:8000/storage/${notif.data.commenter_avatar}`" class="w-full h-full object-cover" />
+                            </div>
+                          </template>
+                          <template v-else-if="notif.type === 'comment'">
+                            <div class="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-lg">💬</div>
+                          </template>
+                          <!-- Warning / role_change / general -->
+                          <template v-else>
+                            <span class="text-lg">{{ notif.type === 'warning' ? '⚠️' : '🎉' }}</span>
+                          </template>
+                        </div>
+                        
                         <div class="flex-1 min-w-0">
                           <div class="flex items-center gap-1.5">
                             <span v-if="!notif.read_at" class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></span>
@@ -338,7 +373,9 @@
           class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 flex flex-col gap-2">
           <p class="text-sm font-medium text-amber-700 dark:text-amber-400">Reason: {{
             topicLabel(activeServerNotif.data?.report_category) }}</p>
-          <p class="text-sm text-amber-600">{{ activeServerNotif.data?.auto_caption }}</p>
+          <p class="text-sm text-amber-600" style="white-space: pre-wrap; word-break: break-word;">
+            {{ activeServerNotif.data?.auto_caption }}
+          </p>
           <p v-if="activeServerNotif.data?.admin_text"
             class="text-sm text-gray-600 dark:text-gray-300 italic border-t border-amber-200 pt-2 mt-1">"{{
               activeServerNotif.data.admin_text }}"</p>
@@ -389,7 +426,9 @@
 
             <textarea v-model="appealText" placeholder="Explain your situation and write your apology..." rows="3"
               class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none transition"
-              maxlength="1000"></textarea>
+              maxlength="1000"
+              style="white-space: pre-wrap; word-break: break-word;"
+            ></textarea>
             <p class="text-xs text-gray-400 text-right">{{ appealText.length }}/1000</p>
 
             <p v-if="appealMsg" class="text-xs" :class="appealMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{
@@ -425,6 +464,24 @@
         </div>
       </template>
 
+      <!-- General notification (appeal accepted, etc.) -->
+      <template v-else-if="activeServerNotif.type === 'general'">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">✅</span>
+          <div>
+            <h2 class="text-base font-semibold text-gray-800 dark:text-white">{{ activeServerNotif.title }}</h2>
+            <p class="text-xs text-gray-400 mt-0.5">{{ formatDateLong(activeServerNotif.created_at) }}</p>
+          </div>
+        </div>
+        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4">
+          <p class="text-sm text-green-700 dark:text-green-400">{{ activeServerNotif.message }}</p>
+          <p v-if="activeServerNotif.data?.admin_response" class="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">"{{ activeServerNotif.data.admin_response }}"</p>
+        </div>
+      </template>
+
+      <button @click="activeServerNotif = null"
+        class="w-full py-2.5 rounded-xl bg-gray-800 text-white text-sm font-medium hover:bg-gray-700 transition">Got it</button>
+
       <button @click="activeServerNotif = null"
         class="w-full py-2.5 rounded-xl bg-gray-800 text-white text-sm font-medium hover:bg-gray-700 transition">Got
         it</button>
@@ -443,7 +500,7 @@ import logo from '../assets/Logo-images/Palette-Logo.png'
 const emit = defineEmits(['navigate', 'logout', 'goToPalette'])
 
 const { user, isAdmin, isSuperAdmin } = useAuth()
-const { notifications, serverNotifications, unreadCount, markAllRead, clearNotifications, loadServerNotifications } = useNotifications()
+const { notifications, serverNotifications, unreadCount, markAllRead, markServerRead, clearNotifications, loadServerNotifications } = useNotifications()
 
 const userInitial = computed(() => user.value?.name?.charAt(0).toUpperCase() || '?')
 
@@ -498,9 +555,11 @@ function toggleNotif() {
 }
 
 function openServerNotif(notif) {
-  activeServerNotif.value = notif
   markServerRead(notif.id)
   notifOpen.value = false
+  if (['warning', 'role_change', 'general'].includes(notif.type)) {
+    activeServerNotif.value = notif
+  }
 }
 
 function goToPalette(notif) {

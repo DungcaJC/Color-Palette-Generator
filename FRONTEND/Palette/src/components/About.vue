@@ -13,7 +13,7 @@
           <div v-for="c in palette" :key="c" class="w-5 h-5 rounded-full animate-fade-in-up" :style="{ backgroundColor: c }"></div>
         </div>
         <h1 class="text-white text-5xl md:text-6xl font-black mb-5 leading-tight tracking-tight">
-          About<br><span style="background: linear-gradient(to right, #6366f1, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Palette</span>
+          About<br><span style="background: linear-gradient(to right, #6366f1, #f97316); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Palette</span>
         </h1>
         <p class="text-gray-300 text-lg leading-relaxed max-w-xl mx-auto">
           A creative tool built for designers, artists, and anyone who thinks in color.

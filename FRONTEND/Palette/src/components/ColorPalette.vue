@@ -71,7 +71,7 @@
           @click="generate"
           :disabled="loading || !imgEl"
           class="w-full py-4 rounded-full text-white font-bold text-sm tracking-widest disabled:opacity-40 transition hover:opacity-90 mt-2"
-          style="background: linear-gradient(to right, #4f46e5, #f97316)"
+          style="background: #39ea56"
         >
           {{ loading ? 'GENERATING...' : 'GENERATE' }}
         </button>
@@ -80,7 +80,7 @@
           @click="openSaveModal"
           :disabled="selectedColors.length === 0"
           class="w-full py-4 rounded-full text-white font-bold text-sm tracking-widest disabled:opacity-40 transition hover:opacity-90"
-          style="background: linear-gradient(to right, #f59e0b, #f97316)"
+          style="background: #eea62b"
         >
           SAVE SELECTED
           <span v-if="selectedColors.length > 0" class="ml-2 bg-white/30 text-white text-xs px-2 py-0.5 rounded-full">
@@ -184,6 +184,7 @@
       </div>
     </div>
 
+    <Footer @navigate="$emit('navigate', $event)" />
   </div>
 </template>
 
@@ -192,6 +193,8 @@ import { ref, computed, nextTick } from 'vue'
 import { useColormind } from '../composables/useColormind'
 import { usePaletteStore } from '../composables/usePaletteStore'
 import { useNotifications } from '../composables/useNotifications'
+import Footer from './Footer.vue'
+const emit = defineEmits(['navigate'])
 
 const { loading, error, generateFromImage } = useColormind()
 const { save, generateId } = usePaletteStore()

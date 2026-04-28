@@ -235,7 +235,7 @@
             <span class="inline-block bg-indigo-50 dark:bg-indigo-900/40 text-indigo-500 text-xs px-2.5 py-1 rounded-full">{{ activePost.category }}</span>
             <span v-if="activePost.post_type === 'palette'" class="inline-block bg-orange-50 dark:bg-orange-900/40 text-orange-500 text-xs px-2.5 py-1 rounded-full ml-1">🎨 Palette</span>
             <span v-else class="inline-block bg-teal-50 dark:bg-teal-900/40 text-teal-500 text-xs px-2.5 py-1 rounded-full ml-1">🎭 Creation</span>
-            <p v-if="activePost.caption" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{{ activePost.caption }}</p>
+            <p v-if="activePost.caption" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed" style="white-space: pre-wrap; word-break: break-word;">{{ activePost.caption }}</p>
           </div>
 
           <!-- Color palette -->
@@ -273,7 +273,7 @@
                   <div class="flex-1 min-w-0">
                     <div class="bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
                       <p class="text-xs font-semibold text-gray-700 dark:text-gray-200 cursor-pointer hover:text-indigo-500 transition" @click="openUserProfile(comment.user)">{{ comment.user?.name }}</p>
-                      <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5">{{ comment.content }}</p>
+                      <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5" style="white-space: pre-wrap; word-break: break-word;">{{ comment.content }}</p>
                     </div>
                     <div class="flex items-center gap-3 mt-1 px-1">
                       <button @click="toggleCommentLike(comment)" class="text-xs transition" :class="comment.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">
@@ -295,7 +295,7 @@
                         <div class="flex-1 min-w-0">
                           <div class="bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
                             <p class="text-xs font-semibold text-gray-700 dark:text-gray-200 cursor-pointer hover:text-indigo-500 transition" @click="openUserProfile(reply.user)">{{ reply.user?.name }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5">{{ reply.content }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5" style="white-space: pre-wrap; word-break: break-word;">{{ reply.content }}</p>
                           </div>
                           <div class="flex items-center gap-3 mt-1 px-1">
                             <button @click="toggleCommentLike(reply)" class="text-xs transition" :class="reply.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">❤️ {{ reply.likes_count }}</button>
@@ -373,7 +373,8 @@
                   v-model="commentReport.details"
                   placeholder="Add more details (optional)"
                   rows="3"
-                  class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none"
+                  class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  style="white-space: pre-wrap; word-break: break-word;"
                 ></textarea>
 
                 <!-- Message -->
@@ -512,7 +513,7 @@
           rows="2"
           @input="autoResize($event)"
           class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-400 transition resize-none overflow-hidden"
-          style="min-height: 70px; max-height: 200px;"
+          style="min-height: 70px; max-height: 200px; white-space: pre-wrap; word-break: break-word;"
         ></textarea>
 
         <!-- Category -->
@@ -579,7 +580,7 @@
 
     <!-- ─── Report Modal ─── -->
     <div v-if="reportTarget" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm p-6 flex flex-col gap-4 max-h-[90vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm p-6 flex flex-col gap-4 max-h-[200vh] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <h2 class="text-base font-semibold text-gray-800 dark:text-white">Report Post</h2>
         <div class="flex flex-col gap-2">
           <label
@@ -595,7 +596,7 @@
             </div>
           </label>
         </div>
-        <textarea v-model="report.details" placeholder="Additional details (optional)" rows="2" class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none"></textarea>
+        <textarea v-model="report.details" placeholder="Additional details (optional)" rows="2" class="w-full height-auto border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style="white-space: pre-wrap; word-break: break-word;"></textarea>
         <p v-if="reportMsg" class="text-xs" :class="reportMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ reportMsg }}</p>
         <div class="flex gap-3">
           <button @click="reportTarget = null; report = { topic: '', details: '' }" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
@@ -652,6 +653,7 @@
       </div>
     </div>
 
+    <Footer @navigate="$emit('navigate', $event)" />
   </div>
 </template>
 
@@ -661,6 +663,8 @@ import axios from 'axios'
 import { useAuth } from '../composables/useAuth'
 import { usePaletteStore } from '../composables/usePaletteStore'
 import UserProfileModal from './UserProfileModal.vue'
+import Footer from './Footer.vue'
+const emit = defineEmits(['navigate'])
 
 const { user, isAdmin } = useAuth()
 const { getAll } = usePaletteStore()

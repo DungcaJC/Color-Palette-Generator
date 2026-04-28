@@ -43,6 +43,8 @@ Start the web: (use a Terminal for each command)
 
 Type this command to start the backend server:
 C:\laragon\www\Color-Palette-Generator> cd BACKEND | php artisan serve
+
+// or if you want to use the Laravel scheduler, you can use this command instead:
 C:\laragon\www\Color-Palette-Generator> cd BACKEND | php artisan schedule:work
 
 Type this command to start the frontend development server:

@@ -11,7 +11,7 @@
       </div>
       <div class="max-w-3xl mx-auto text-center relative z-10">
         <h1 class="text-white text-5xl md:text-6xl font-black mb-5 tracking-tight leading-tight">
-          Learn <span style="background: linear-gradient(to right, #6366f1, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">More</span>
+          Learn <span style="background: linear-gradient(to right, #6366f1, #f97316); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">More</span>
         </h1>
         <p class="text-gray-300 text-lg max-w-xl mx-auto leading-relaxed">
           Everything you need to know about using Palette — from generating your first colors to sharing with the community.

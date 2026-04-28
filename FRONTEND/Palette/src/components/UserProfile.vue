@@ -40,7 +40,7 @@
                 :class="user?.role === 'superadmin' ? 'bg-red-500' : user?.role === 'admin' ? 'bg-blue-500' : 'bg-green-500'"></span>
               <span class="text-xs"
                 :class="user?.role === 'superadmin' ? 'text-red-400' : user?.role === 'admin' ? 'text-blue-400' : 'text-green-400'">{{
-                user?.role }}</span>
+                  user?.role }}</span>
             </div>
             <p v-if="avatarMsg" class="text-xs mt-1"
               :class="avatarMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ avatarMsg }}</p>
@@ -51,19 +51,25 @@
 
         <!-- Stats -->
         <div
-          class="grid grid-cols-3 divide-x divide-gray-100 dark:divide-gray-700 border-b border-gray-100 dark:border-gray-700">
-          <div class="px-6 py-4 text-center">
+          class="grid grid-cols-4 divide-x divide-gray-100 dark:divide-gray-700 border-b border-gray-100 dark:border-gray-700">
+          <div class="px-4 py-4 text-center">
             <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ stats.total }}</p>
             <p class="text-xs text-gray-400 mt-0.5">Palettes</p>
           </div>
-          <div class="px-6 py-4 text-center">
+          <div class="px-4 py-4 text-center">
             <p class="text-2xl font-bold text-orange-400">{{ myPosts.length }}</p>
             <p class="text-xs text-gray-400 mt-0.5">Posts</p>
           </div>
-          <div class="px-6 py-4 text-center">
-            <p class="text-2xl font-bold text-red-400">{{ totalLikes }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">Total Likes</p>
-          </div>
+          <button @click="openMyFollowers"
+            class="px-4 py-4 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            <p class="text-2xl font-bold text-indigo-400">{{ followersCount }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">Followers</p>
+          </button>
+          <button @click="openMyFollowing"
+            class="px-4 py-4 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            <p class="text-2xl font-bold text-teal-400">{{ followingCount }}</p>
+            <p class="text-xs text-gray-400 mt-0.5">Following</p>
+          </button>
         </div>
 
         <!-- Tab bar -->
@@ -91,7 +97,7 @@
             <textarea v-model="bio" maxlength="500" rows="3" placeholder="Tell the community about yourself..."
               @input="autoResize($event)"
               class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-400 transition resize-none overflow-hidden"
-              style="min-height: 80px; max-height: 200px;"></textarea>
+              style="min-height: 80px; max-height: 200px; white-space: pre-wrap; word-break: break-word;"></textarea>
             <div class="flex items-center justify-between mt-2">
               <p v-if="bioMsg" class="text-xs" :class="bioMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{
                 bioMsg }}</p>
@@ -99,7 +105,7 @@
             </div>
             <button @click="saveBio"
               class="mt-2 flex items-center gap-1.5 px-4 py-2 rounded-xl text-white text-xs font-semibold transition hover:opacity-90"
-              style="background: linear-gradient(to right, #4f46e5, #f97316)">
+              style="background: #427cf0">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
               </svg>
@@ -215,12 +221,15 @@
             </div>
           </div>
         </div>
-        
+
         <!-- ─── Warnings Tab ─── -->
         <div v-if="activeTab === 'warnings'" class="p-6 animate-fade-in-up">
-          <div v-if="user?.strikes" class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4">
-            <p class="text-sm font-medium text-red-700 dark:text-red-400">⚠️ You have {{ user.strikes }} strike{{ user.strikes > 1 ? 's' : '' }}</p>
-            <p class="text-xs text-red-500 mt-0.5">At 3 strikes = 1 day ban · 5 = 1 week · 10 = 1 month · 15 = 1 year</p>
+          <div v-if="user?.strikes"
+            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4">
+            <p class="text-sm font-medium text-red-700 dark:text-red-400">⚠️ You have {{ user.strikes }} strike{{
+              user.strikes > 1 ? 's' : '' }}</p>
+            <p class="text-xs text-red-500 mt-0.5">At 3 strikes = 1 day ban · 5 = 1 week · 10 = 1 month · 15 = 1 year
+            </p>
           </div>
 
           <p v-if="warningsLoading" class="text-center py-8 text-gray-400">Loading...</p>
@@ -348,7 +357,7 @@
                   <div class="flex-1 min-w-0">
                     <div class="bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
                       <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">{{ comment.user?.name }}</p>
-                      <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5">{{ comment.content }}</p>
+                      <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5" style="white-space: pre-wrap; word-break: break-word;">{{ comment.content }}</p>
                     </div>
                     <div class="flex items-center gap-3 mt-1 px-1">
                       <button @click="toggleCommentLike(comment)" class="text-xs transition"
@@ -376,12 +385,12 @@
                         <div class="flex-1 min-w-0">
                           <div class="bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
                             <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">{{ reply.user?.name }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5">{{ reply.content }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5" style="white-space: pre-wrap; word-break: break-word;">{{ reply.content }}</p>
                           </div>
                           <div class="flex items-center gap-3 mt-1 px-1">
                             <button @click="toggleCommentLike(reply)" class="text-xs transition"
                               :class="reply.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">❤️ {{
-                              reply.likes_count }}</button>
+                                reply.likes_count }}</button>
                             <button v-if="reply.user_id === user?.id || isAdmin()" @click="deleteComment(reply.id)"
                               class="text-xs text-red-400 hover:text-red-600 transition opacity-0 group-hover:opacity-100">Delete</button>
                             <span class="text-xs text-gray-400 ml-auto">{{ formatDate(reply.created_at) }}</span>
@@ -415,10 +424,10 @@
                           </label>
                         </div>
                         <textarea v-model="commentReport.details" placeholder="Details (optional)" rows="2"
-                          class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none"></textarea>
+                          class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style="white-space: pre-wrap; word-break: break-word;"></textarea>
                         <p v-if="commentReportMsg" class="text-xs"
                           :class="commentReportMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{
-                          commentReportMsg }}</p>
+                            commentReportMsg }}</p>
                         <div class="flex gap-3">
                           <button @click="reportCommentTarget = null"
                             class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
@@ -516,7 +525,8 @@
 
         <textarea v-model="editForm.caption" placeholder="Caption..." rows="3" @input="autoResize($event)"
           class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none resize-none transition"
-          style="min-height: 80px; max-height: 200px;"></textarea>
+          style="min-height: 80px; max-height: 200px; white-space: pre-wrap; word-break: break-word;">
+        </textarea>
 
         <select v-if="editTarget.post_type !== 'palette'" v-model="editForm.category"
           class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none transition">
@@ -524,7 +534,7 @@
         </select>
 
         <p v-if="editMsg" class="text-xs" :class="editMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ editMsg
-          }}</p>
+        }}</p>
 
         <div class="flex gap-3">
           <button @click="editTarget = null"
@@ -549,12 +559,13 @@
         <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
           <p class="text-xs font-medium text-amber-700 dark:text-amber-400">Warning Category: {{
             appealModal.report_category }}</p>
-          <p class="text-xs text-amber-600 dark:text-amber-300 mt-1">{{ appealModal.auto_caption ||
-            appealModal.admin_text }}</p>
+          <p class="text-xs text-amber-600 dark:text-amber-300 mt-1" style="white-space: pre-wrap; word-break: break-word;">
+            {{ appealModal.auto_caption || appealModal.admin_text }}
+          </p>
         </div>
 
         <textarea v-model="appealText" placeholder="Write your apology and explanation..." rows="4"
-          class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none resize-none transition"></textarea>
+          class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none resize-none transition" style="white-space: pre-wrap; word-break: break-word;"></textarea>
 
         <div>
           <label class="text-xs text-gray-400 mb-1 block">Proof Images (optional, max 5)</label>
@@ -575,6 +586,64 @@
       </div>
     </div>
 
+    <!-- My Followers Modal -->
+    <div v-if="showMyFollowers" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4"
+      @click.self="showMyFollowers = false">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm max-h-[70vh] flex flex-col overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 class="text-base font-semibold text-gray-800 dark:text-white">My Followers ({{ followersCount }})</h2>
+          <button @click="showMyFollowers = false" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <div class="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div v-if="!myFollowersList.length" class="text-center py-8 text-gray-400 text-sm">No followers yet</div>
+          <div v-else class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
+            <div v-for="person in myFollowersList" :key="person.id" class="flex items-center gap-3 px-5 py-3">
+              <div
+                class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
+                <img v-if="person.avatar" :src="`http://localhost:8000/storage/${person.avatar}`"
+                  class="w-full h-full object-cover" />
+                <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{{ person.name }}</p>
+                <p class="text-xs text-gray-400 truncate" style="white-space: pre-wrap; word-break: break-word;">{{ person.bio || 'No bio' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Following Modal -->
+    <div v-if="showMyFollowing" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4"
+      @click.self="showMyFollowing = false">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm max-h-[70vh] flex flex-col overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 class="text-base font-semibold text-gray-800 dark:text-white">Following ({{ followingCount }})</h2>
+          <button @click="showMyFollowing = false" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <div class="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div v-if="!myFollowingList.length" class="text-center py-8 text-gray-400 text-sm">Not following anyone yet
+          </div>
+          <div v-else class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
+            <div v-for="person in myFollowingList" :key="person.id" class="flex items-center gap-3 px-5 py-3">
+              <div
+                class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
+                <img v-if="person.avatar" :src="`http://localhost:8000/storage/${person.avatar}`"
+                  class="w-full h-full object-cover" />
+                <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{{ person.name }}</p>
+                <p class="text-xs text-gray-400 truncate" style="white-space: pre-wrap; word-break: break-word;">{{ person.bio || 'No bio' }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -600,6 +669,12 @@ const newPassword = ref('')
 const confirmPassword = ref('')
 const passwordError = ref('')
 const passwordMsg = ref('')
+const followersCount = ref(0)
+const followingCount = ref(0)
+const showMyFollowers = ref(false)
+const showMyFollowing = ref(false)
+const myFollowersList = ref([])
+const myFollowingList = ref([])
 
 // ─── Posts ─────────────────────────────────────────────
 const stats = ref({ total: 0, created: 0, image: 0, keyword: 0 })
@@ -687,9 +762,26 @@ onMounted(async () => {
     myPosts.value = data
   } catch (e) { console.error(e) }
 
+  try {
+    const { data: followers } = await axios.get(`/api/users/${user.value?.id}/followers`)
+    myFollowersList.value = followers
+    followersCount.value = followers.length
+    const { data: following } = await axios.get(`/api/users/${user.value?.id}/following`)
+    myFollowingList.value = following
+    followingCount.value = following.length
+  } catch (e) { console.error(e) }
+
   // Fetch warnings for the Warnings tab
   await fetchWarnings()
 })
+
+function openMyFollowers() {
+  showMyFollowers.value = true
+}
+
+function openMyFollowing() {
+  showMyFollowing.value = true
+}
 
 // ─── Open post — load comments ─────────────────────────
 async function openMyPost(post) {
