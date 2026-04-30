@@ -6,7 +6,7 @@ return [
     'allowed_origins' => [
         'http://localhost:5173',
         'http://localhost:5174',
-        'https://your-app-name.vercel.app',
+        'https://color-palette-generator-cg1w.vercel.app',
     ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
