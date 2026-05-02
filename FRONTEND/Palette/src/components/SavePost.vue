@@ -26,7 +26,7 @@
           class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition cursor-pointer group"
         >
           <div class="relative aspect-square bg-gray-100 dark:bg-gray-700">
-            <img :src="`http://localhost:8000/storage/${post.image}`" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <img :src="getImageUrl(post.image)" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
             <span class="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full">{{ post.category }}</span>
           </div>
           <div v-if="post.colors && post.colors.length" class="flex h-4">
@@ -35,7 +35,7 @@
           <div class="p-3 flex items-center justify-between">
             <div class="flex items-center gap-2 min-w-0">
               <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
-                <img v-if="post.user?.avatar" :src="`http://localhost:8000/storage/${post.user.avatar}`" class="w-full h-full object-cover" />
+                <img v-if="post.user?.avatar" :src="getImageUrl(post.user.avatar)" class="w-full h-full object-cover" />
                 <span v-else>{{ post.user?.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ post.user?.name }}</p>
@@ -50,13 +50,13 @@
     <div v-if="activePost" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4" @click.self="activePost = null">
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex overflow-hidden">
         <div class="w-1/2 bg-black flex items-center justify-center shrink-0">
-          <img :src="`http://localhost:8000/storage/${activePost.image}`" class="w-full h-full object-contain max-h-[90vh]" />
+          <img :src="getImageUrl(activePost.image)" class="w-full h-full object-contain max-h-[90vh]" />
         </div>
         <div class="flex-1 flex flex-col overflow-y-auto">
           <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
-                <img v-if="activePost.user?.avatar" :src="`http://localhost:8000/storage/${activePost.user.avatar}`" class="w-full h-full object-cover" />
+                <img v-if="activePost.user?.avatar" :src="getImageUrl(activePost.user.avatar)" class="w-full h-full object-cover" />
                 <span v-else>{{ activePost.user?.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div>
@@ -95,6 +95,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+
+function getImageUrl(path) {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `http://localhost:8000/storage/${path}`
+}
 
 const posts = ref([])
 const loading = ref(true)

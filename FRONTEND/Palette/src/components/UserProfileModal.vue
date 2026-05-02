@@ -22,7 +22,7 @@
 
             <!-- Avatar -->
             <div class="w-20 h-20 rounded-full bg-indigo-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden shrink-0 ring-4 ring-white/10">
-              <img v-if="profile.user.avatar" :src="`http://localhost:8000/storage/${profile.user.avatar}`" class="w-full h-full object-cover" />
+              <img v-if="profile.user.avatar" :src="getImageUrl(profile.user.avatar)" class="w-full h-full object-cover" />
               <span v-else>{{ profile.user.name?.charAt(0).toUpperCase() }}</span>
             </div>
 
@@ -112,7 +112,7 @@
               style="display: grid; grid-template-rows: 1fr auto;"
             >
               <div class="relative overflow-hidden" style="aspect-ratio: 1/1;">
-                <img v-if="post.image" :src="`http://localhost:8000/storage/${post.image}`" class="absolute inset-0 w-full h-full object-cover" />
+                <img v-if="post.image" :src="getImageUrl(post.image)" class="absolute inset-0 w-full h-full object-cover" />
                 <div v-else class="absolute inset-0 flex">
                   <div v-for="(c, ci) in (post.colors || []).slice(0, 5)" :key="ci" class="flex-1" :style="{ backgroundColor: c }"></div>
                 </div>
@@ -160,7 +160,7 @@
         <div v-else class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
           <div v-for="person in followersList" :key="person.id" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
             <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
-              <img v-if="person.avatar" :src="`http://localhost:8000/storage/${person.avatar}`" class="w-full h-full object-cover" />
+              <img v-if="person.avatar" :src="getImageUrl(person.avatar)" class="w-full h-full object-cover" />
               <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
             </div>
             <div class="flex-1 min-w-0">
@@ -187,7 +187,7 @@
         <div v-else class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
           <div v-for="person in followingList" :key="person.id" class="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
             <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
-              <img v-if="person.avatar" :src="`http://localhost:8000/storage/${person.avatar}`" class="w-full h-full object-cover" />
+              <img v-if="person.avatar" :src="getImageUrl(person.avatar)" class="w-full h-full object-cover" />
               <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
             </div>
             <div class="flex-1 min-w-0">
@@ -209,7 +209,7 @@
     >
       <!-- Left: image or palette -->
       <div class="w-5/12 bg-black flex items-center justify-center shrink-0">
-        <img v-if="activeSubPost.image" :src="`http://localhost:8000/storage/${activeSubPost.image}`" class="w-full h-full object-contain" />
+        <img v-if="activeSubPost.image" :src="getImageUrl(activeSubPost.image)" class="w-full h-full object-contain" />
         <div v-else class="w-full h-full flex flex-col p-6 gap-3 items-center justify-center">
           <div class="flex w-full h-32 rounded-xl overflow-hidden">
             <div v-for="(c, ci) in (activeSubPost.colors || [])" :key="ci" class="flex-1" :style="{ backgroundColor: c }"></div>
@@ -225,7 +225,7 @@
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
           <div class="flex items-center gap-3">
             <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
-              <img v-if="activeSubPost.user?.avatar" :src="`http://localhost:8000/storage/${activeSubPost.user.avatar}`" class="w-full h-full object-cover" />
+              <img v-if="activeSubPost.user?.avatar" :src="getImageUrl(activeSubPost.user.avatar)" class="w-full h-full object-cover" />
               <span v-else>{{ activeSubPost.user?.name?.charAt(0).toUpperCase() }}</span>
             </div>
             <div>
@@ -272,7 +272,7 @@
               class="flex gap-2 group"
             >
               <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
-                <img v-if="comment.user?.avatar" :src="`http://localhost:8000/storage/${comment.user.avatar}`" class="w-full h-full object-cover" />
+                <img v-if="comment.user?.avatar" :src="getImageUrl(comment.user.avatar)" class="w-full h-full object-cover" />
                 <span v-else>{{ comment.user?.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div class="flex-1 min-w-0">
@@ -292,7 +292,7 @@
                 <div v-if="comment.replies && comment.replies.length" class="mt-2 ml-3 flex flex-col gap-2">
                   <div v-for="reply in comment.replies" :key="reply.id" class="flex gap-2">
                     <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
-                      <img v-if="reply.user?.avatar" :src="`http://localhost:8000/storage/${reply.user.avatar}`" class="w-full h-full object-cover" />
+                      <img v-if="reply.user?.avatar" :src="getImageUrl(reply.user.avatar)" class="w-full h-full object-cover" />
                       <span v-else>{{ reply.user?.name?.charAt(0).toUpperCase() }}</span>
                     </div>
                     <div class="flex-1 min-w-0">
@@ -398,6 +398,12 @@ import { useAuth } from '../composables/useAuth'
 
 const { user: authUser } = useAuth()
 const currentUserId = computed(() => authUser.value?.id)
+
+function getImageUrl(path) {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `http://localhost:8000/storage/${path}`
+}
 
 // Follow
 const isFollowing   = ref(false)

@@ -127,7 +127,7 @@
               class="bg-white dark:bg-gray-800 rounded-2xl p-5 flex flex-col items-center gap-3 border border-gray-100 dark:border-gray-700 shadow-sm cursor-pointer hover:shadow-md hover:border-indigo-200 transition"
             >
               <div class="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
-                <img v-if="person.avatar" :src="`http://localhost:8000/storage/${person.avatar}`" class="w-full h-full object-cover" />
+                <img v-if="person.avatar" :src="getImageUrl(person.avatar)" class="w-full h-full object-cover" />
                 <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div class="text-center">
@@ -158,7 +158,7 @@
             >
               <!-- Image -->
               <div class="relative overflow-hidden aspect-square bg-gray-100 dark:bg-gray-700">
-                <img :src="`http://localhost:8000/storage/${post.image}`" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <img :src="getImageUrl(post.image)" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <span class="absolute top-2 left-2 bg-black/50 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">{{ post.category }}</span>
                 <button
                   v-if="canDelete(post)"
@@ -176,7 +176,7 @@
               <div class="p-3 flex items-center justify-between">
                 <div class="flex items-center gap-2 min-w-0">
                   <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
-                    <img v-if="post.user?.avatar" :src="`http://localhost:8000/storage/${post.user.avatar}`" class="w-full h-full object-cover" />
+                    <img v-if="post.user?.avatar" :src="getImageUrl(post.user.avatar)" class="w-full h-full object-cover" />
                     <span v-else>{{ post.user?.name?.charAt(0).toUpperCase() }}</span>
                   </div>
                   <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ post.user?.name }}</p>
@@ -206,7 +206,7 @@
 
         <!-- Left: image -->
         <div class="w-1/2 bg-black flex items-center justify-center shrink-0">
-          <img :src="`http://localhost:8000/storage/${activePost.image}`" class="w-full h-full object-contain max-h-[90vh]" />
+          <img :src="getImageUrl(activePost.image)" class="w-full h-full object-contain max-h-[90vh]" />
         </div>
 
         <!-- Right: details -->
@@ -219,7 +219,7 @@
               @click="selectedUserId = activePost.user?.id; activePost = null"
             >
               <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
-                <img v-if="activePost.user?.avatar" :src="`http://localhost:8000/storage/${activePost.user.avatar}`" class="w-full h-full object-cover" />
+                <img v-if="activePost.user?.avatar" :src="getImageUrl(activePost.user.avatar)" class="w-full h-full object-cover" />
                 <span v-else>{{ activePost.user?.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div>
@@ -267,7 +267,7 @@
                 <!-- Main comment -->
                 <div class="flex gap-2 group">
                   <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0 cursor-pointer" @click="openUserProfile(comment.user)">
-                    <img v-if="comment.user?.avatar" :src="`http://localhost:8000/storage/${comment.user.avatar}`" class="w-full h-full object-cover" />
+                    <img v-if="comment.user?.avatar" :src="getImageUrl(comment.user.avatar)" class="w-full h-full object-cover" />
                     <span v-else>{{ comment.user?.name?.charAt(0).toUpperCase() }}</span>
                   </div>
                   <div class="flex-1 min-w-0">
@@ -289,7 +289,7 @@
                     <div v-if="comment.replies && comment.replies.length" class="mt-2 ml-4 flex flex-col gap-2">
                       <div v-for="reply in comment.replies" :key="reply.id" class="flex gap-2 group">
                         <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0 cursor-pointer" @click="openUserProfile(reply.user)">
-                          <img v-if="reply.user?.avatar" :src="`http://localhost:8000/storage/${reply.user.avatar}`" class="w-full h-full object-cover" />
+                          <img v-if="reply.user?.avatar" :src="getImageUrl(reply.user.avatar)" class="w-full h-full object-cover" />
                           <span v-else>{{ reply.user?.name?.charAt(0).toUpperCase() }}</span>
                         </div>
                         <div class="flex-1 min-w-0">
@@ -667,6 +667,12 @@ import { usePaletteStore } from '../composables/usePaletteStore'
 import UserProfileModal from './UserProfileModal.vue'
 import Footer from './Footer.vue'
 const emit = defineEmits(['navigate'])
+
+function getImageUrl(path) {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `http://localhost:8000/storage/${path}`
+}
 
 const { user, isAdmin } = useAuth()
 const { getAll } = usePaletteStore()

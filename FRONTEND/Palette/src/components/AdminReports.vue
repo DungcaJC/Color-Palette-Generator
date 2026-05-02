@@ -103,7 +103,7 @@
           >
             <div class="flex gap-4 p-5">
               <div @click="openPostModal(report)" class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 shrink-0 cursor-pointer hover:opacity-80 transition">
-                <img v-if="report.post?.image" :src="`http://localhost:8000/storage/${report.post.image}`" class="w-full h-full object-cover" />
+                <img v-if="report.post?.image" :src="getImageUrl(report.post.image)" class="w-full h-full object-cover" />
                 <div v-else class="w-full h-full flex items-center justify-center text-2xl">🎨</div>
               </div>
 
@@ -162,7 +162,7 @@
                   <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 mb-2">
                     <div class="flex items-center gap-2 mb-1">
                       <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0 cursor-pointer" @click="selectedUserId = report.comment?.user?.id">
-                        <img v-if="report.comment?.user?.avatar" :src="`http://localhost:8000/storage/${report.comment.user.avatar}`" class="w-full h-full object-cover" />
+                        <img v-if="report.comment?.user?.avatar" :src="getImageUrl(report.comment.user.avatar)" class="w-full h-full object-cover" />
                         <span v-else>{{ report.comment?.user?.name?.charAt(0).toUpperCase() }}</span>
                       </div>
                       <span class="text-xs font-semibold text-indigo-500 cursor-pointer hover:text-indigo-700" @click="selectedUserId = report.comment?.user?.id">{{ report.comment?.user?.name }}</span>
@@ -175,7 +175,7 @@
                   <!-- Post it belongs to -->
                   <div v-if="report.comment?.post" @click="openCommentPostModal(report.comment.post)" class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition mb-2">
                     <div class="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 shrink-0">
-                      <img v-if="report.comment.post.image" :src="`http://localhost:8000/storage/${report.comment.post.image}`" class="w-full h-full object-cover" />
+                      <img v-if="report.comment.post.image" :src="getImageUrl(report.comment.post.image)" class="w-full h-full object-cover" />
                       <div v-else class="w-full h-full flex items-center justify-center text-xs">🎨</div>
                     </div>
                     <p class="text-xs text-gray-400" style="white-space: pre-wrap; word-break: break-word;">
@@ -211,7 +211,7 @@
     <div v-if="activePost" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4" @click.self="activePost = null">
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex overflow-hidden">
         <div class="w-1/2 bg-black flex items-center justify-center shrink-0">
-          <img v-if="activePost.image" :src="`http://localhost:8000/storage/${activePost.image}`" class="w-full h-full object-contain max-h-[90vh]" />
+          <img v-if="activePost.image" :src="getImageUrl(activePost.image)" class="w-full h-full object-contain max-h-[90vh]" />
           <div v-else class="w-full p-8 flex">
             <div class="flex h-32 w-full rounded-xl overflow-hidden">
               <div v-for="(c, i) in (activePost.colors || [])" :key="i" class="flex-1" :style="{ backgroundColor: c }"></div>
@@ -222,7 +222,7 @@
           <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
             <div class="flex items-center gap-3 cursor-pointer" @click="selectedUserId = activePost.user?.id; activePost = null">
               <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
-                <img v-if="activePost.user?.avatar" :src="`http://localhost:8000/storage/${activePost.user.avatar}`" class="w-full h-full object-cover" />
+                <img v-if="activePost.user?.avatar" :src="getImageUrl(activePost.user.avatar)" class="w-full h-full object-cover" />
                 <span v-else>{{ activePost.user?.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div>
@@ -352,6 +352,12 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import UserProfileModal from './UserProfileModal.vue'
+
+function getImageUrl(path) {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `http://localhost:8000/storage/${path}`
+}
 
 const reports = ref([])
 const commentReports = ref([])

@@ -197,7 +197,7 @@
               class="rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition bg-gray-100 dark:bg-gray-700 flex flex-col">
               <!-- Image or palette swatch -->
               <div class="aspect-square relative bg-gray-200 dark:bg-gray-600">
-                <img v-if="post.image" :src="`http://localhost:8000/storage/${post.image}`"
+                <img v-if="post.image" :src="getImageUrl(post.image)"
                   class="w-full h-full object-cover" />
                 <div v-else class="w-full h-full flex flex-col">
                   <div class="flex flex-1">
@@ -350,7 +350,7 @@
                 <div class="flex gap-2 group">
                   <div
                     class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
-                    <img v-if="comment.user?.avatar" :src="`http://localhost:8000/storage/${comment.user.avatar}`"
+                    <img v-if="comment.user?.avatar" :src="getImageUrl(comment.user.avatar)"
                       class="w-full h-full object-cover" />
                     <span v-else>{{ comment.user?.name?.charAt(0).toUpperCase() }}</span>
                   </div>
@@ -378,7 +378,7 @@
                       <div v-for="reply in comment.replies" :key="reply.id" class="flex gap-2 group">
                         <div
                           class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
-                          <img v-if="reply.user?.avatar" :src="`http://localhost:8000/storage/${reply.user.avatar}`"
+                          <img v-if="reply.user?.avatar" :src="getImageUrl(reply.user.avatar)"
                             class="w-full h-full object-cover" />
                           <span v-else>{{ reply.user?.name?.charAt(0).toUpperCase() }}</span>
                         </div>
@@ -601,7 +601,7 @@
             <div v-for="person in myFollowersList" :key="person.id" class="flex items-center gap-3 px-5 py-3">
               <div
                 class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
-                <img v-if="person.avatar" :src="`http://localhost:8000/storage/${person.avatar}`"
+                <img v-if="person.avatar" :src="getImageUrl(person.avatar)"
                   class="w-full h-full object-cover" />
                 <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
               </div>
@@ -631,7 +631,7 @@
             <div v-for="person in myFollowingList" :key="person.id" class="flex items-center gap-3 px-5 py-3">
               <div
                 class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
-                <img v-if="person.avatar" :src="`http://localhost:8000/storage/${person.avatar}`"
+                <img v-if="person.avatar" :src="getImageUrl(person.avatar)"
                   class="w-full h-full object-cover" />
                 <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
               </div>
@@ -656,9 +656,15 @@ import { usePaletteStore } from '../composables/usePaletteStore'
 const { user, isAdmin } = useAuth()
 const { getAll } = usePaletteStore()
 
+function getImageUrl(path) {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `http://localhost:8000/storage/${path}`
+}
+
 // ─── Avatar / profile fields ───────────────────────────
 const avatarInput = ref(null)
-const avatarUrl = ref(user.value?.avatar ? `http://localhost:8000/storage/${user.value.avatar}` : null)
+const avatarUrl = ref(user.value?.avatar ? getImageUrl(user.value.avatar) : null)
 const avatarMsg = ref('')
 const newName = ref(user.value?.name || '')
 const nameMsg = ref('')
@@ -982,7 +988,7 @@ async function onAvatarChange(e) {
     formData.append('avatar', file)
     const { data } = await axios.post('/api/user/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
     if (user.value) user.value.avatar = data.avatar
-    avatarUrl.value = `http://localhost:8000/storage/${data.avatar}`
+    avatarUrl.value = getImageUrl(data.avatar)
     avatarMsg.value = '✓ Photo updated!'
     setTimeout(() => avatarMsg.value = '', 3000)
   } catch (e) { avatarMsg.value = 'Failed.'; setTimeout(() => avatarMsg.value = '', 3000) }

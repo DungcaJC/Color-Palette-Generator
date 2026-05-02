@@ -43,7 +43,7 @@
                   <div class="flex items-center gap-3">
                     <div class="relative">
                       <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
-                        <img v-if="u.avatar" :src="`http://localhost:8000/storage/${u.avatar}`" class="w-full h-full object-cover" />
+                        <img v-if="u.avatar" :src="getImageUrl(u.avatar)" class="w-full h-full object-cover" />
                         <span v-else>{{ u.name?.charAt(0).toUpperCase() }}</span>
                       </div>
                       <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-gray-800" :class="roleColor(u.role)"></span>
@@ -151,6 +151,12 @@ import axios from 'axios'
 import UserProfileModal from './UserProfileModal.vue'
 
 defineEmits(['navigate'])
+
+function getImageUrl(path) {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `http://localhost:8000/storage/${path}`
+}
 
 const users = ref([])
 const loading = ref(true)

@@ -175,7 +175,7 @@
                           <!-- Follow: show follower's avatar -->
                           <template v-if="notif.type === 'follow' && notif.data?.follower_avatar">
                             <div class="w-8 h-8 rounded-full overflow-hidden bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-                              <img :src="`http://localhost:8000/storage/${notif.data.follower_avatar}`" class="w-full h-full object-cover" />
+                              <img :src="getImageUrl(notif.data.follower_avatar)" class="w-full h-full object-cover" />
                             </div>
                           </template>
                           <template v-else-if="notif.type === 'follow' && !notif.data?.follower_avatar">
@@ -186,7 +186,7 @@
                           <!-- Like: show liker's avatar -->
                           <template v-else-if="notif.type === 'like' && notif.data?.liker_avatar">
                             <div class="w-8 h-8 rounded-full overflow-hidden bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-                              <img :src="`http://localhost:8000/storage/${notif.data.liker_avatar}`" class="w-full h-full object-cover" />
+                              <img :src="getImageUrl(notif.data.liker_avatar)" class="w-full h-full object-cover" />
                             </div>
                           </template>
                           <template v-else-if="notif.type === 'like'">
@@ -195,7 +195,7 @@
                           <!-- Comment: show commenter's avatar -->
                           <template v-else-if="notif.type === 'comment' && notif.data?.commenter_avatar">
                             <div class="w-8 h-8 rounded-full overflow-hidden bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-                              <img :src="`http://localhost:8000/storage/${notif.data.commenter_avatar}`" class="w-full h-full object-cover" />
+                              <img :src="getImageUrl(notif.data.commenter_avatar)" class="w-full h-full object-cover" />
                             </div>
                           </template>
                           <template v-else-if="notif.type === 'comment'">
@@ -481,10 +481,6 @@
 
       <button @click="activeServerNotif = null"
         class="w-full py-2.5 rounded-xl bg-gray-800 text-white text-sm font-medium hover:bg-gray-700 transition">Got it</button>
-
-      <button @click="activeServerNotif = null"
-        class="w-full py-2.5 rounded-xl bg-gray-800 text-white text-sm font-medium hover:bg-gray-700 transition">Got
-        it</button>
     </div>
   </div>
 </template>
@@ -498,6 +494,12 @@ import { useNotifications } from '../composables/useNotifications'
 import logo from '../assets/Logo-images/Palette-Logo.png'
 
 const emit = defineEmits(['navigate', 'logout', 'goToPalette'])
+
+function getImageUrl(path) {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `http://localhost:8000/storage/${path}`
+}
 
 const { user, isAdmin, isSuperAdmin } = useAuth()
 const { notifications, serverNotifications, unreadCount, markAllRead, markServerRead, clearNotifications, loadServerNotifications } = useNotifications()
