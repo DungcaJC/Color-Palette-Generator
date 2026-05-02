@@ -76,7 +76,9 @@
       <p v-if="savedMsg" class="text-xs text-green-600 text-center">✓ {{ savedMsg }}</p>
       <p v-if="error" class="text-xs text-red-500 text-center">{{ error }}</p>
     </div>
+  </div>
 
+  <div>
     <Footer @navigate="$emit('navigate', $event)" />
   </div>
 </template>

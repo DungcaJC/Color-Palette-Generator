@@ -123,7 +123,9 @@
     <p v-if="copied" class="fixed bottom-6 left-1/2 -translate-x-1/2 text-xs bg-gray-800 text-white px-4 py-2 rounded-full shadow-lg">
       ✓ Copied {{ copied }}
     </p>
-
+  </div>
+  
+  <div>
     <Footer @navigate="$emit('navigate', $event)" />
   </div>
 </template>

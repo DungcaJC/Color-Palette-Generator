@@ -652,7 +652,9 @@
         </div>
       </div>
     </div>
+  </div>
 
+  <div>
     <Footer @navigate="$emit('navigate', $event)" />
   </div>
 </template>
