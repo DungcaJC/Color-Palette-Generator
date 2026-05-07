@@ -6,7 +6,7 @@ return [
     'allowed_origins' => [
     'http://localhost:5173',
     'http://localhost:5174',
-    'https://color-palette-generator-pi-one.vercel.app',
+    'https://color-palette-generator-egcm.vercel.app',
     ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
