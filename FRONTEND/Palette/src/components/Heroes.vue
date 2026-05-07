@@ -2,10 +2,10 @@
   <!--Heroes.vue-->
 
   <!-- Root: full screen dark background -->
-  <div class="mainbg flex h-screen w-full bg-[#0d1117] overflow-hidden font-sans">
+  <div class="mainbg flex flex-col md:flex-row h-auto md:h-screen w-full bg-[#0d1117] overflow-hidden font-sans">
 
     <!-- ── LEFT HERO SECTION ── -->
-    <div class="flex flex-col justify-center px-16 w-1/2 relative">
+    <div class="flex flex-col justify-center px-6 md:px-16 py-12 md:py-0 w-full md:w-1/2 relative min-h-[60vh] md:min-h-screen">
 
       <!-- Background subtle grid overlay -->
       <div class="absolute inset-0 opacity-10"
@@ -16,14 +16,14 @@
       </div>
 
       <!-- Logo -->
-      <div class="mb-10 relative z-10">
+      <div class="mb-6 md:mb-10 relative z-10">
         <div class="w-8 h-8 rounded-full flex items-center justify-center shadow-lg shadow-yellow">
           <img class="h-8 w-auto" src="../assets/Logo-images/Palette-Logo.png" alt="Palette Logo" />
         </div>
       </div>
 
       <!-- Badge row -->
-      <div class="flex items-center gap-3 mb-6 relative z-10">
+      <div class="flex flex-wrap items-center gap-2 md:gap-3 mb-4 md:mb-6 relative z-10">
         <span class="text-xs text-white bg-white/10 border border-white/10 rounded-full px-3 py-1">
           What's new
         </span>
@@ -33,29 +33,29 @@
       </div>
 
       <!-- Hero heading -->
-      <h1 class="text-5xl font-bold text-white leading-tight mb-5 relative z-10">
-        Create Stunning Color Palettes That Instantly <br>Elevate Your Designs
+      <h1 class="text-3xl md:text-5xl font-bold text-white leading-tight mb-3 md:mb-5 relative z-10">
+        Create Stunning Color Palettes That Instantly <br class="hidden md:block" />Elevate Your Designs
       </h1>
 
       <!-- Subtext -->
-      <p class="text-white text-sm leading-relaxed max-w-sm mb-8 relative z-10">
+      <p class="text-white text-xs md:text-sm leading-relaxed max-w-sm mb-6 md:mb-8 relative z-10">
         Explore, mix, and match colors easily to bring your ideas to life without overthinking every shade
       </p>
 
       <!-- CTA buttons -->
-      <div class="flex items-center gap-4 relative z-10">
-        <button id="generate-btn" class="text-white text-sm font-medium px-5 py-2.5 rounded-md">
+      <div class="flex flex-col sm:flex-row items-start md:items-center gap-3 md:gap-4 relative z-10">
+        <button id="generate-btn" class="text-white text-xs md:text-sm font-medium px-4 md:px-5 py-2 md:py-2.5 rounded-md whitespace-nowrap">
           <a href="#">Generate</a>
         </button>
-        <button class="text-slate-300 hover:text-white transition-colors text-sm flex items-center gap-1">
+        <button class="text-slate-300 hover:text-white transition-colors text-xs md:text-sm flex items-center gap-1">
           Learn more <span>→</span>
         </button>
       </div>
     </div>
 
     <!-- ── RIGHT PANEL (App mockup) ── -->
-    <div class="w-1/2 flex items-center justify-center p-8">
-      <img class="h-auto w-auto rounded-lg shadow-lg relative z-10 shadow-black/10" src="../assets/Bg-Images/ColorPalette3694.png" alt="Color-Palette-#3694" />
+    <div class="w-full md:w-1/2 flex items-center justify-center p-4 md:p-8 min-h-[40vh] md:min-h-screen">
+      <img class="h-auto w-full max-w-xs md:max-w-full rounded-lg shadow-lg relative z-10 shadow-black/10" src="../assets/Bg-Images/ColorPalette3694.png" alt="Color-Palette-#3694" />
     </div>
 
   </div>

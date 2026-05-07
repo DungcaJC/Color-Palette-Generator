@@ -2,8 +2,57 @@
   <!-- AdminReports.vue -->
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 
-    <div class="bg-[#0d1117] pt-10 pb-20 px-8">
+    <div class="bg-[#0d1117] pt-8 md:pt-10 pb-16 md:pb-20 px-4 md:px-8">
       <div class="max-w-6xl mx-auto">
+        <!-- Quick Actions Dropdown (Mobile & Desktop) -->
+        <div class="mb-4 relative" ref="quickActionsRef">
+          <button
+            @click="quickActionsOpen = !quickActionsOpen"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-medium border border-white/20 hover:bg-white/20 transition"
+          >
+            <span>⚡ Quick Actions</span>
+            <svg class="w-4 h-4 transition-transform" :class="quickActionsOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          
+          <div
+            v-if="quickActionsOpen"
+            class="absolute top-full mt-2 w-48 bg-gray-800 border border-white/20 rounded-lg shadow-xl overflow-hidden z-50"
+          >
+            <button
+              @click="navigateAdmin('AdminUsers'); quickActionsOpen = false"
+              class="w-full text-left px-4 py-2.5 text-white text-sm hover:bg-white/10 transition flex items-center gap-2 border-b border-white/10"
+            >
+              <span>👥</span> Manage Users
+            </button>
+            <button
+              @click="navigateAdmin('AdminPalettes'); quickActionsOpen = false"
+              class="w-full text-left px-4 py-2.5 text-white text-sm hover:bg-white/10 transition flex items-center gap-2 border-b border-white/10"
+            >
+              <span>🎨</span> Manage Palettes
+            </button>
+            <button
+              @click="navigateAdmin('AdminReports'); quickActionsOpen = false"
+              class="w-full text-left px-4 py-2.5 text-white text-sm hover:bg-white/10 transition flex items-center gap-2 border-b border-white/10"
+            >
+              <span>🚨</span> Reports
+            </button>
+            <button
+              @click="navigateAdmin('AdminAppeals'); quickActionsOpen = false"
+              class="w-full text-left px-4 py-2.5 text-white text-sm hover:bg-white/10 transition flex items-center gap-2 border-b border-white/10"
+            >
+              <span>📤</span> Appeals
+            </button>
+            <button
+              @click="navigateAdmin('AdminRoles'); quickActionsOpen = false"
+              class="w-full text-left px-4 py-2.5 text-white text-sm hover:bg-white/10 transition flex items-center gap-2"
+            >
+              <span>⚡</span> Manage Roles
+            </button>
+          </div>
+        </div>
+
         <div class="flex items-center gap-3 mb-1">
           <span class="text-2xl">🚨</span>
           <h1 class="text-white text-2xl font-semibold">Reports</h1>
@@ -353,10 +402,16 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import UserProfileModal from './UserProfileModal.vue'
 
+const emit = defineEmits(['navigate'])
+
 function getImageUrl(path) {
   if (!path) return ''
   if (path.startsWith('http')) return path
   return `http://localhost:8000/storage/${path}`
+}
+
+function navigateAdmin(component) {
+  emit('navigate', component)
 }
 
 const reports = ref([])
@@ -383,6 +438,8 @@ const directBanTarget = ref(null)
 const directBanForm   = ref({ duration: '1d', admin_reason: '' })
 const directBanMsg    = ref('')
 const directBanning   = ref(false)
+const quickActionsOpen = ref(false)
+const quickActionsRef = ref(null)
 
 const sortOptions = [
   { value: 'newest',     icon: '🆕', label: 'Newest'      },

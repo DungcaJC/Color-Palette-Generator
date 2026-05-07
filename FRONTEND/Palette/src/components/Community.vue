@@ -69,10 +69,30 @@
     </div>
 
     <!-- Body: sidebar + content -->
-    <div class="max-w-7xl mx-auto px-8 py-6 flex gap-6">
+    <div class="max-w-7xl mx-auto px-4 md:px-8 py-6 flex gap-4 md:gap-6">
 
-      <!-- Left sidebar -->
-      <div class="w-52 shrink-0 flex flex-col gap-4">
+      <!-- Mobile filter dropdown button -->
+      <div class="md:hidden mb-4 w-full">
+        <button
+          @click="mobileFiltersOpen = !mobileFiltersOpen"
+          class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-sm font-medium"
+        >
+          <span>🔍 Filters</span>
+          <svg class="w-4 h-4 transition-transform" :class="mobileFiltersOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Left sidebar - hidden on mobile, shown as dropdown -->
+      <div v-if="mobileFiltersOpen || window.innerWidth >= 768" class="fixed md:static inset-0 md:inset-auto top-16 left-0 right-0 bottom-0 z-40 md:z-auto bg-gray-50 dark:bg-gray-900 md:bg-transparent md:w-52 md:shrink-0 flex flex-col gap-4 md:p-0 p-4 max-h-[calc(100vh-5rem)] md:max-h-none overflow-y-auto md:overflow-visible">
+        <!-- Close button for mobile -->
+        <button
+          @click="mobileFiltersOpen = false"
+          class="md:hidden absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+        >
+          ✕
+        </button>
 
         <!-- Post Type -->
         <div>
@@ -111,7 +131,7 @@
       </div>
 
       <!-- Right content -->
-      <div class="flex-1 min-w-0">
+      <div class="flex-1 min-w-0 md:mt-0 mt-4">
 
         <!-- Loading -->
         <div v-if="loading" class="flex justify-center py-24">
@@ -120,18 +140,18 @@
 
         <!-- People results -->
         <div v-else-if="searchType === 'people'">
-          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             <div
               v-for="person in people" :key="person.id"
               @click="selectedUserId = person.id"
-              class="bg-white dark:bg-gray-800 rounded-2xl p-5 flex flex-col items-center gap-3 border border-gray-100 dark:border-gray-700 shadow-sm cursor-pointer hover:shadow-md hover:border-indigo-200 transition"
+              class="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-5 flex flex-col items-center gap-3 border border-gray-100 dark:border-gray-700 shadow-sm cursor-pointer hover:shadow-md hover:border-indigo-200 transition"
             >
-              <div class="w-16 h-16 rounded-full bg-indigo-600 flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
+              <div class="w-14 md:w-16 h-14 md:h-16 rounded-full bg-indigo-600 flex items-center justify-center text-white text-lg md:text-2xl font-bold overflow-hidden">
                 <img v-if="person.avatar" :src="getImageUrl(person.avatar)" class="w-full h-full object-cover" />
                 <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div class="text-center">
-                <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">{{ person.name }}</p>
+                <p class="text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-200">{{ person.name }}</p>
                 <p class="text-xs text-gray-400">{{ person.posts_count }} posts</p>
                 <div class="flex items-center justify-center gap-1 mt-1">
                   <span class="w-1.5 h-1.5 rounded-full" :class="person.role === 'superadmin' ? 'bg-red-500' : person.role === 'admin' ? 'bg-blue-500' : 'bg-green-500'"></span>
@@ -150,7 +170,7 @@
             <span class="text-sm">No posts yet. Be the first to share!</span>
           </p>
 
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             <div
               v-for="post in posts" :key="post.id"
               @click="openPostModal(post)"
@@ -201,29 +221,29 @@
     </div>
 
     <!-- ─── Post View Modal ─── -->
-    <div v-if="activePost" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4" @click.self="activePost = null">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex overflow-hidden">
+    <div v-if="activePost" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4 py-4 md:py-0" @click.self="activePost = null">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] md:max-h-[90vh] flex flex-col md:flex-row overflow-hidden">
 
-        <!-- Left: image -->
-        <div class="w-1/2 bg-black flex items-center justify-center shrink-0">
-          <img :src="getImageUrl(activePost.image)" class="w-full h-full object-contain max-h-[90vh]" />
+        <!-- Left: image (or top on mobile) -->
+        <div class="w-full md:w-1/2 bg-black flex items-center justify-center shrink-0 max-h-96 md:max-h-full">
+          <img :src="getImageUrl(activePost.image)" class="w-full h-full object-contain" />
         </div>
 
-        <!-- Right: details -->
-        <div class="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col min-h-0">
+        <!-- Right: details (or bottom on mobile) -->
+        <div class="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col min-h-0 w-full md:w-1/2">
 
           <!-- User header -->
-          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
+          <div class="flex items-center justify-between px-4 md:px-5 py-3 md:py-4 border-b border-gray-100 dark:border-gray-700 shrink-0">
             <div
               class="flex items-center gap-3 cursor-pointer"
               @click="selectedUserId = activePost.user?.id; activePost = null"
             >
-              <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden">
+              <div class="w-8 md:w-9 h-8 md:h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs md:text-sm font-bold overflow-hidden">
                 <img v-if="activePost.user?.avatar" :src="getImageUrl(activePost.user.avatar)" class="w-full h-full object-cover" />
                 <span v-else>{{ activePost.user?.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div>
-                <p class="text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-indigo-500 transition">{{ activePost.user?.name }}</p>
+                <p class="text-xs md:text-sm font-semibold text-gray-700 dark:text-gray-200 hover:text-indigo-500 transition">{{ activePost.user?.name }}</p>
                 <p class="text-xs text-gray-400">{{ formatDate(activePost.created_at) }}</p>
               </div>
             </div>
@@ -231,20 +251,20 @@
           </div>
 
           <!-- Category + caption -->
-          <div class="px-5 py-4 shrink-0">
+          <div class="px-4 md:px-5 py-3 md:py-4 shrink-0 border-b border-gray-100 dark:border-gray-700">
             <span class="inline-block bg-indigo-50 dark:bg-indigo-900/40 text-indigo-500 text-xs px-2.5 py-1 rounded-full">{{ activePost.category }}</span>
             <span v-if="activePost.post_type === 'palette'" class="inline-block bg-orange-50 dark:bg-orange-900/40 text-orange-500 text-xs px-2.5 py-1 rounded-full ml-1">🎨 Palette</span>
             <span v-else class="inline-block bg-teal-50 dark:bg-teal-900/40 text-teal-500 text-xs px-2.5 py-1 rounded-full ml-1">🎭 Creation</span>
-            <p v-if="activePost.caption" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed" style="white-space: pre-wrap; word-break: break-word;">{{ activePost.caption }}</p>
+            <p v-if="activePost.caption" class="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed mt-2" style="white-space: pre-wrap; word-break: break-word;">{{ activePost.caption }}</p>
           </div>
 
           <!-- Color palette -->
-          <div v-if="activePost.colors && activePost.colors.length" class="px-5 pb-4 shrink-0">
+          <div v-if="activePost.colors && activePost.colors.length" class="px-4 md:px-5 py-3 md:py-4 shrink-0 border-b border-gray-100 dark:border-gray-700">
             <p class="text-xs text-gray-400 uppercase tracking-widest mb-2">Palette used</p>
             <div class="flex gap-2 flex-wrap">
               <div
                 v-for="(color, i) in activePost.colors" :key="i"
-                class="w-10 h-10 rounded-lg cursor-pointer hover:scale-110 transition-transform"
+                class="w-8 md:w-10 h-8 md:h-10 rounded-lg cursor-pointer hover:scale-110 transition-transform"
                 :style="{ backgroundColor: color }"
                 :title="color"
                 @click="copyHex(color)"
@@ -253,12 +273,12 @@
             <p v-if="copiedHex" class="text-xs text-green-500 mt-1">✓ Copied {{ copiedHex }}</p>
           </div>
 
-          <!-- Comments section — inside post modal right details panel -->
-          <div class="px-5 py-3 border-t border-gray-100 dark:border-gray-700 flex flex-col flex-1 min-h-0" style="min-height: 200px;">
-            <p class="text-xs text-gray-400 uppercase tracking-widest mb-3 shrink-0">Comments ({{ comments.length }})</p>
+          <!-- Comments section -->
+          <div class="px-4 md:px-5 py-3 md:py-3 border-t border-gray-100 dark:border-gray-700 flex flex-col flex-1 min-h-0" style="min-height: 150px;">
+            <p class="text-xs text-gray-400 uppercase tracking-widest mb-2 md:mb-3 shrink-0">Comments ({{ comments.length }})</p>
 
             <!-- Comment list -->
-            <div class="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col gap-3 mb-3">
+            <div class="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-col gap-2 md:gap-3 mb-2 md:mb-3">
               <div
                 v-for="(comment, ci) in comments" :key="comment.id"
                 class="flex flex-col gap-1 animate-fade-in-up"
@@ -266,41 +286,41 @@
               >
                 <!-- Main comment -->
                 <div class="flex gap-2 group">
-                  <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0 cursor-pointer" @click="openUserProfile(comment.user)">
+                  <div class="w-6 md:w-7 h-6 md:h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0 cursor-pointer" @click="openUserProfile(comment.user)">
                     <img v-if="comment.user?.avatar" :src="getImageUrl(comment.user.avatar)" class="w-full h-full object-cover" />
                     <span v-else>{{ comment.user?.name?.charAt(0).toUpperCase() }}</span>
                   </div>
                   <div class="flex-1 min-w-0">
                     <div class="bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
                       <p class="text-xs font-semibold text-gray-700 dark:text-gray-200 cursor-pointer hover:text-indigo-500 transition" @click="openUserProfile(comment.user)">{{ comment.user?.name }}</p>
-                      <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5" style="white-space: pre-wrap; word-break: break-word;">{{ comment.content }}</p>
+                      <p class="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-0.5" style="white-space: pre-wrap; word-break: break-word;">{{ comment.content }}</p>
                     </div>
-                    <div class="flex items-center gap-3 mt-1 px-1">
-                      <button @click="toggleCommentLike(comment)" class="text-xs transition" :class="comment.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">
+                    <div class="flex items-center gap-2 md:gap-3 mt-1 px-1 flex-wrap text-xs">
+                      <button @click="toggleCommentLike(comment)" class="transition" :class="comment.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">
                         ❤️ {{ comment.likes_count }}
                       </button>
-                      <button @click="replyTarget = comment; replyText = ''" class="text-xs text-gray-400 hover:text-indigo-500 transition">Reply</button>
-                      <button @click="openCommentReport(comment)" class="text-xs text-gray-400 hover:text-gray-600 transition">Report</button>
-                      <button v-if="comment.user_id === user?.id || isAdmin()" @click="deleteComment(comment.id)" class="text-xs text-red-400 hover:text-red-600 transition opacity-0 group-hover:opacity-100">Delete</button>
-                      <span class="text-xs text-gray-400 ml-auto">{{ formatDate(comment.created_at) }}</span>
+                      <button @click="replyTarget = comment; replyText = ''" class="text-gray-400 hover:text-indigo-500 transition">Reply</button>
+                      <button @click="openCommentReport(comment)" class="text-gray-400 hover:text-gray-600 transition">Report</button>
+                      <button v-if="comment.user_id === user?.id || isAdmin()" @click="deleteComment(comment.id)" class="text-red-400 hover:text-red-600 transition opacity-0 group-hover:opacity-100">Delete</button>
+                      <span class="text-gray-400 ml-auto">{{ formatDate(comment.created_at) }}</span>
                     </div>
 
                     <!-- Replies -->
                     <div v-if="comment.replies && comment.replies.length" class="mt-2 ml-4 flex flex-col gap-2">
                       <div v-for="reply in comment.replies" :key="reply.id" class="flex gap-2 group">
-                        <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0 cursor-pointer" @click="openUserProfile(reply.user)">
+                        <div class="w-5 md:w-6 h-5 md:h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0 cursor-pointer" @click="openUserProfile(reply.user)">
                           <img v-if="reply.user?.avatar" :src="getImageUrl(reply.user.avatar)" class="w-full h-full object-cover" />
                           <span v-else>{{ reply.user?.name?.charAt(0).toUpperCase() }}</span>
                         </div>
                         <div class="flex-1 min-w-0">
                           <div class="bg-gray-50 dark:bg-gray-700 rounded-xl px-3 py-2">
                             <p class="text-xs font-semibold text-gray-700 dark:text-gray-200 cursor-pointer hover:text-indigo-500 transition" @click="openUserProfile(reply.user)">{{ reply.user?.name }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5" style="white-space: pre-wrap; word-break: break-word;">{{ reply.content }}</p>
+                            <p class="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-0.5" style="white-space: pre-wrap; word-break: break-word;">{{ reply.content }}</p>
                           </div>
-                          <div class="flex items-center gap-3 mt-1 px-1">
-                            <button @click="toggleCommentLike(reply)" class="text-xs transition" :class="reply.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">❤️ {{ reply.likes_count }}</button>
-                            <button v-if="reply.user_id === user?.id || isAdmin()" @click="deleteComment(reply.id)" class="text-xs text-red-400 hover:text-red-600 transition opacity-0 group-hover:opacity-100">Delete</button>
-                            <span class="text-xs text-gray-400 ml-auto">{{ formatDate(reply.created_at) }}</span>
+                          <div class="flex items-center gap-2 md:gap-3 mt-1 px-1 text-xs">
+                            <button @click="toggleCommentLike(reply)" class="transition" :class="reply.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">❤️ {{ reply.likes_count }}</button>
+                            <button v-if="reply.user_id === user?.id || isAdmin()" @click="deleteComment(reply.id)" class="text-red-400 hover:text-red-600 transition opacity-0 group-hover:opacity-100">Delete</button>
+                            <span class="text-gray-400 ml-auto">{{ formatDate(reply.created_at) }}</span>
                           </div>
                         </div>
                       </div>
@@ -311,8 +331,8 @@
                       <input v-model="replyText" type="text" :placeholder="`Reply to ${comment.user?.name}...`"
                         class="flex-1 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-400 transition"
                         @keyup.enter="submitReply(comment.id)" />
-                      <button @click="submitReply(comment.id)" class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs transition hover:bg-indigo-500">Reply</button>
-                      <button @click="replyTarget = null" class="text-xs text-gray-400 hover:text-gray-600">✕</button>
+                      <button @click="submitReply(comment.id)" class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs transition hover:bg-indigo-500 shrink-0">Reply</button>
+                      <button @click="replyTarget = null" class="text-xs text-gray-400 hover:text-gray-600 shrink-0">✕</button>
                     </div>
                   </div>
                 </div>
@@ -323,127 +343,52 @@
 
             <!-- New comment input -->
             <div class="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700 shrink-0">
-              <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
+              <div class="w-6 md:w-7 h-6 md:h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
                 <img v-if="user?.avatar" :src="user.avatar" class="w-full h-full object-cover" />
                 <span v-else>{{ user?.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div class="flex-1 flex gap-2">
                 <input v-model="newComment" type="text" placeholder="Write a comment..."
-                  class="flex-1 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-400 transition"
+                  class="flex-1 text-xs md:text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-400 transition"
                   @keyup.enter="submitComment" />
-                <button @click="submitComment" :disabled="!newComment.trim()" class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-sm disabled:opacity-40 transition hover:bg-indigo-500">Post</button>
+                <button @click="submitComment" :disabled="!newComment.trim()" class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs md:text-sm disabled:opacity-40 transition hover:bg-indigo-500 shrink-0 whitespace-nowrap">Post</button>
               </div>
             </div>
           </div>
 
-          <!-- Comment Report Modal -->
-          <div v-if="reportCommentTarget" class="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
-
-              <!-- Header -->
-              <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 class="text-lg font-semibold text-gray-800 dark:text-white">
-                  Report Comment
-                </h2>
-              </div>
-
-              <!-- Body -->
-              <div class="p-6 flex flex-col gap-4 overflow-y-auto">
-
-                <!-- Topics -->
-                <div class="flex flex-col gap-2">
-                  <label
-                    v-for="topic in reportTopics"
-                    :key="topic.value"
-                    class="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition"
-                    :class="commentReport.topic === topic.value
-                      ? 'border-indigo-400 bg-indigo-50 dark:bg-indigo-900/30'
-                      : 'border-gray-200 dark:border-gray-600 hover:border-gray-400'"
-                  >
-                    <input type="radio" v-model="commentReport.topic" :value="topic.value" class="hidden" />
-                    <span>{{ topic.icon }}</span>
-                    <p class="text-sm text-gray-700 dark:text-gray-200">
-                      {{ topic.label }}
-                    </p>
-                  </label>
-                </div>
-
-                <!-- Textarea -->
-                <textarea
-                  v-model="commentReport.details"
-                  placeholder="Add more details (optional)"
-                  rows="3"
-                  class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                  style="white-space: pre-wrap; word-break: break-word;"
-                ></textarea>
-
-                <!-- Message -->
-                <p
-                  v-if="commentReportMsg"
-                  class="text-xs"
-                  :class="commentReportMsg.includes('✓') ? 'text-green-500' : 'text-red-500'"
-                >
-                  {{ commentReportMsg }}
-                </p>
-              </div>
-
-              <!-- Footer -->
-              <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex gap-3">
-                <button
-                  @click="reportCommentTarget = null"
-                  class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  @click="submitCommentReport"
-                  :disabled="!commentReport.topic || commentReporting"
-                  class="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium disabled:opacity-40 transition"
-                >
-                  Report
-                </button>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- User Profile Modal -->
-          <UserProfileModal v-if="selectedUserId" :userId="selectedUserId" @close="selectedUserId = null" />
-
-          <!-- Actions -->
-          <div class="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-4">
+          <!-- Actions (moved to bottom) -->
+          <div class="px-4 md:px-5 py-3 md:py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0 flex-wrap gap-2">
+            <div class="flex items-center gap-3 md:gap-4 text-xs md:text-sm">
               <!-- Like -->
-              <button @click="toggleLike(activePost)" class="flex items-center gap-1.5 text-sm transition" :class="activePost.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">
-                <span class="text-lg">{{ activePost.liked_by_user ? '❤️' : '🤍' }}</span>
+              <button @click="toggleLike(activePost)" class="flex items-center gap-1.5 transition" :class="activePost.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">
+                <span class="text-base md:text-lg">{{ activePost.liked_by_user ? '❤️' : '🤍' }}</span>
                 <span>{{ activePost.likes_count }}</span>
               </button>
 
               <!-- Save post -->
-              <button @click="toggleSavePost(activePost)" class="flex items-center gap-1.5 text-sm transition" :class="activePost.saved_by_user ? 'text-indigo-500' : 'text-gray-400 hover:text-indigo-400'">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <button @click="toggleSavePost(activePost)" class="flex items-center gap-1.5 transition" :class="activePost.saved_by_user ? 'text-indigo-500' : 'text-gray-400 hover:text-indigo-400'">
+                <svg class="w-4 md:w-5 h-4 md:h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
                 </svg>
-                <span>{{ activePost.saved_by_user ? 'Saved' : 'Save' }}</span>
+                <span class="hidden md:inline">{{ activePost.saved_by_user ? 'Saved' : 'Save' }}</span>
               </button>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 md:gap-3 text-xs">
               <!-- Report -->
-              <button @click="openReport(activePost)" class="text-xs text-gray-400 hover:text-gray-600 transition">Report</button>
+              <button @click="openReport(activePost)" class="text-gray-400 hover:text-gray-600 transition">Report</button>
 
               <!-- Edit -->
               <button
                 v-if="activePost.user_id === user?.id"
                 @click="openEditModal(activePost)"
-                class="text-xs text-indigo-400 hover:text-indigo-600 border border-indigo-200 px-3 py-1 rounded-full transition"
+                class="text-indigo-400 hover:text-indigo-600 border border-indigo-200 px-3 py-1 rounded-full transition"
               >
                 Edit
               </button>
 
               <!-- Delete -->
-              <button v-if="canDelete(activePost)" @click="confirmDeletePost(activePost)" class="text-xs text-red-400 hover:text-red-600 border border-red-200 px-3 py-1 rounded-full transition">Delete</button>
+              <button v-if="canDelete(activePost)" @click="confirmDeletePost(activePost)" class="text-red-400 hover:text-red-600 border border-red-200 px-3 py-1 rounded-full transition">Delete</button>
             </div>
           </div>
         </div>
@@ -688,6 +633,7 @@ const activeCategory = ref('all')
 const sort = ref('latest')
 const savedPalettes = ref([])
 const copiedHex = ref('')
+const mobileFiltersOpen = ref(false)
 
 // Comments
 const comments = ref([])
@@ -839,6 +785,7 @@ onMounted(async () => {
 
 async function fetchPosts() {
   loading.value = true
+  mobileFiltersOpen.value = false
   try {
     if (searchType.value === 'people') {
       const { data } = await axios.get(`/api/posts?type=people&search=${encodeURIComponent(search.value)}`)
