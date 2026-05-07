@@ -1,4 +1,12 @@
 {
+  "name": "color-palette-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "cd Palette && npm install && npm run build",
+    "dev": "cd Palette && npm run dev",
+    "preview": "cd Palette && npm run preview"
+  },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2"
   },
