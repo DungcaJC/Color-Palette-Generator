@@ -161,6 +161,7 @@
 
       <p v-if="msg" class="text-xs text-center" :class="msg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ msg }}</p>
     </div>
+  </div>
 
     <!-- Image preview -->
     <div v-if="previewImage" class="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center" @click="previewImage = null">
