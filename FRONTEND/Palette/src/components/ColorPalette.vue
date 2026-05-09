@@ -11,12 +11,12 @@
     </p>
   </div>
 
-  <div id="Generate-image" class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-8 transition-colors duration-300">
+  <div id="Generate-image" class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4 sm:p-8 transition-colors duration-300">
 
-    <div class="flex flex-col gap-5 w-full lg:w-96 lg:shrink-0">
+    <div class="flex flex-col lg:flex-row gap-6 lg:gap-10 w-full">
 
       <!-- Left Panel -->
-      <div class="flex flex-col gap-5 w-96 shrink-0">
+      <div class="flex flex-col gap-5 w-full lg:w-96 lg:shrink-0">
 
         <div
           class="bg-white dark:bg-gray-800 rounded-3xl shadow-md aspect-square flex flex-col items-center justify-center cursor-pointer hover:shadow-xl transition overflow-hidden"
