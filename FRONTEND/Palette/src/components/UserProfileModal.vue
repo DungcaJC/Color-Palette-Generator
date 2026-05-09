@@ -18,7 +18,7 @@
           <button @click="$emit('close')" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg z-10">✕</button>
 
           <!-- Main header content -->
-          <div class="relative z-10 p-6 flex gap-5">
+          <div class="relative z-10 p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-5">
 
             <!-- Avatar -->
             <div class="w-20 h-20 rounded-full bg-indigo-600 flex items-center justify-center text-white text-3xl font-bold overflow-hidden shrink-0 ring-4 ring-white/10">
@@ -44,7 +44,7 @@
             </div>
 
             <!-- Right side — follow stats + button -->
-            <div class="shrink-0 flex flex-col items-end justify-between gap-3 pr-6">
+            <div class="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:pr-6 w-full sm:w-auto">
               <!-- Follow button -->
               <button
                 v-if="currentUserId && currentUserId !== profile.user.id"
@@ -76,7 +76,7 @@
         </div>
 
         <!-- Stats -->
-        <div class="grid grid-cols-4 border-b border-gray-100 dark:border-gray-700">
+        <div class="grid grid-cols-2 sm:grid-cols-4 border-b border-gray-100 dark:border-gray-700">
           <div class="text-center py-4 border-r border-gray-100 dark:border-gray-700">
             <p class="text-xl font-bold text-gray-800 dark:text-white">{{ profile.posts.length }}</p>
             <p class="text-xs text-gray-400">Posts</p>
@@ -204,11 +204,9 @@
   <!-- ─── Sub-post view modal (full Community style) ─── -->
   <div v-if="activeSubPost" class="fixed inset-0 z-[70] bg-black/70 flex items-center justify-center px-4" @click.self="activeSubPost = null">
     <div
-      class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl flex overflow-hidden"
-      style="height: min(90vh, 680px);"
-    >
+      class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl flex flex-col md:flex-row overflow-hidden" style="max-height:90vh">
       <!-- Left: image or palette -->
-      <div class="w-5/12 bg-black flex items-center justify-center shrink-0">
+      <div class="w-full md:w-5/12 bg-black flex items-center justify-center shrink-0 max-h-56 sm:max-h-72 md:max-h-full">
         <img v-if="activeSubPost.image" :src="getImageUrl(activeSubPost.image)" class="w-full h-full object-contain" />
         <div v-else class="w-full h-full flex flex-col p-6 gap-3 items-center justify-center">
           <div class="flex w-full h-32 rounded-xl overflow-hidden">

@@ -91,7 +91,7 @@
         </div>
 
         <div v-for="u in filteredUsers" :key="u.id"
-          class="flex items-center justify-between px-6 py-4 border-b border-gray-50 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-4 gap-3 border-b border-gray-50 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
 
           <!-- Clickable user info -->
           <div class="flex items-center gap-3 cursor-pointer" @click="selectedUserId = u.id">
@@ -113,7 +113,7 @@
             <span class="text-xs text-gray-400">Current: <span class="font-medium" :class="roleLabelColor(u.role)">{{ u.role }}</span></span>
             <select v-if="u.role !== 'superadmin' || currentUser?.id === u.id" v-model="u.role" @change="changeRole(u)"
               :disabled="u.id === currentUser?.id"
-              class="text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-1.5 focus:outline-none focus:border-red-400 transition disabled:opacity-40 cursor-pointer">
+              class="w-full sm:w-auto text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-1.5 focus:outline-none focus:border-red-400 transition disabled:opacity-40 cursor-pointer">
               <option value="user">User</option>
               <option value="admin">Admin</option>
               <option value="superadmin">Super Admin</option>

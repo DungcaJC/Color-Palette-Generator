@@ -44,9 +44,7 @@
 
       <!-- CTA buttons -->
       <div class="flex flex-col sm:flex-row items-start md:items-center gap-3 md:gap-4 relative z-10">
-        <button id="generate-btn" class="text-white text-xs md:text-sm font-medium px-4 md:px-5 py-2 md:py-2.5 rounded-md whitespace-nowrap">
-          <a href="#">Generate</a>
-        </button>
+        <button @click="$emit('navigate','ColorPalette')">Generate</button>
         <button class="text-slate-300 hover:text-white transition-colors text-xs md:text-sm flex items-center gap-1">
           Learn more <span>→</span>
         </button>

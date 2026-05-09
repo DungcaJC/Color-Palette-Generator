@@ -11,7 +11,7 @@
         </div>
 
         <!-- Search + toggle -->
-        <div class="flex gap-2 items-center">
+        <div class="flex flex-wrap gap-2 items-center justify-end">
           <!-- Post / Person toggle -->
           <div class="flex bg-white/10 rounded-xl p-1 border border-white/10">
             <button
@@ -41,7 +41,7 @@
               v-model="search"
               type="text"
               :placeholder="searchType === 'posts' ? 'Search posts...' : 'Search people...'"
-              class="bg-transparent px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none w-48"
+              class="bg-transparent px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none w-32 sm:w-48"
               @keyup.enter="fetchPosts"
             />
             <button @click="fetchPosts" class="px-3 text-gray-400 hover:text-white transition">
@@ -85,7 +85,7 @@
       </div>
 
       <!-- Left sidebar - hidden on mobile, shown as dropdown -->
-      <div v-if="mobileFiltersOpen || window.innerWidth >= 768" class="fixed md:static inset-0 md:inset-auto top-16 left-0 right-0 bottom-0 z-40 md:z-auto bg-gray-50 dark:bg-gray-900 md:bg-transparent md:w-52 md:shrink-0 flex flex-col gap-4 md:p-0 p-4 max-h-[calc(100vh-5rem)] md:max-h-none overflow-y-auto md:overflow-visible">
+      <div v-show="mobileFiltersOpen" class="md:flex md:static inset-0 md:inset-auto top-16 left-0 right-0 bottom-0 z-40 md:z-auto bg-gray-50 dark:bg-gray-900 md:bg-transparent md:w-52 md:shrink-0 flex flex-col gap-4 md:p-0 p-4 max-h-[calc(100vh-5rem)] md:max-h-none overflow-y-auto md:overflow-visible">
         <!-- Close button for mobile -->
         <button
           @click="mobileFiltersOpen = false"
@@ -222,10 +222,10 @@
 
     <!-- ─── Post View Modal ─── -->
     <div v-if="activePost" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4 py-4 md:py-0" @click.self="activePost = null">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] md:max-h-[90vh] flex flex-col md:flex-row overflow-hidden">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl mx-2 sm:mx-0 max-h-[95vh] md:max-h-[90vh] flex flex-col md:flex-row overflow-hidden">
 
         <!-- Left: image (or top on mobile) -->
-        <div class="w-full md:w-1/2 bg-black flex items-center justify-center shrink-0 max-h-96 md:max-h-full">
+        <div class="w-full md:w-1/2 bg-black flex items-center justify-center shrink-0 max-h-56 sm:max-h-72 md:max-h-full">
           <img :src="getImageUrl(activePost.image)" class="w-full h-full object-contain" />
         </div>
 

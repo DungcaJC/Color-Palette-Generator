@@ -1,6 +1,6 @@
 <template>
   <!--SavePalette.vue-->
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-8 transition-colors duration-300">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-8 transition-colors duration-300">
     <div class="max-w-5xl mx-auto flex flex-col gap-6">
 
       <div class="flex items-center justify-between">
@@ -17,12 +17,12 @@
         </button>
       </div>
 
-      <div class="flex gap-2 flex-wrap">
+      <div class="flex gap-2 overflow-x-auto pb-1 flex-nowrap sm:flex-wrap">
         <button
           v-for="tab in tabs"
           :key="tab.value"
           @click="activeTab = tab.value"
-          class="px-4 py-2 rounded-full text-sm font-medium border transition"
+          class="px-4 py-2 rounded-full text-sm font-medium border transition shrink-0"
           :class="activeTab === tab.value
             ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white'
             : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:border-gray-400'"

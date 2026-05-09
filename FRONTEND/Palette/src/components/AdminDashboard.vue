@@ -45,14 +45,16 @@
             <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-teal-400 inline-block"></span> Palettes</span>
           </div>
         </div>
-        <div class="flex items-end gap-2 h-32" v-if="chartData.length">
-          <div v-for="(d, i) in chartData" :key="i" class="flex-1 flex flex-col items-center gap-0.5">
-            <div class="w-full flex gap-0.5 items-end h-24">
-              <div class="flex-1 bg-indigo-500 rounded-t transition-all" :style="{ height: barHeight(d.users) + '%' }" :title="`${d.users} users`"></div>
-              <div class="flex-1 bg-orange-400 rounded-t transition-all" :style="{ height: barHeight(d.posts) + '%' }" :title="`${d.posts} posts`"></div>
-              <div class="flex-1 bg-teal-400 rounded-t transition-all" :style="{ height: barHeight(d.palettes) + '%' }" :title="`${d.palettes} palettes`"></div>
+        <div class="overflow-x-auto -mx-2 px-2" v-if="chartData.length">
+          <div class="flex items-end gap-2 h-32" style="min-width:360px">
+            <div v-for="(d, i) in chartData" :key="i" class="flex-1 flex flex-col items-center gap-0.5">
+              <div class="w-full flex gap-0.5 items-end h-24">
+                <div class="flex-1 bg-indigo-500 rounded-t transition-all" :style="{ height: barHeight(d.users) + '%' }" :title="`${d.users} users`"></div>
+                <div class="flex-1 bg-orange-400 rounded-t transition-all" :style="{ height: barHeight(d.posts) + '%' }" :title="`${d.posts} posts`"></div>
+                <div class="flex-1 bg-teal-400 rounded-t transition-all" :style="{ height: barHeight(d.palettes) + '%' }" :title="`${d.palettes} palettes`"></div>
+              </div>
+              <p class="text-xs text-gray-400 text-center leading-tight" style="font-size:9px;">{{ d.date || d.month }}</p>
             </div>
-            <p class="text-xs text-gray-400 text-center leading-tight" style="font-size:9px;">{{ d.date || d.month }}</p>
           </div>
         </div>
       </div>
@@ -123,7 +125,7 @@
       <!-- Quick actions -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
         <p class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">Quick Actions</p>
-        <div class="flex flex-wrap gap-3">
+        <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-3">
           <button @click="$emit('navigate', 'AdminUsers')" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:bg-indigo-100 transition">👥 Manage Users</button>
           <button @click="$emit('navigate', 'AdminPalettes')" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-sm font-medium hover:bg-orange-100 transition">🎨 Manage Palettes</button>
           <button @click="$emit('navigate', 'AdminReports')" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-100 transition">🚨 Reports</button>

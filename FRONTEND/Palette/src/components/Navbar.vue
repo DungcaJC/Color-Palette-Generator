@@ -151,7 +151,7 @@
                   leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100"
                   leave-to-class="transform opacity-0 scale-95">
                   <div v-if="notifOpen"
-                    class="absolute right-0 mt-2 w-80 origin-top-right rounded-xl bg-[#0d1117] border border-white/10 shadow-xl overflow-hidden z-50">
+                    class="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-80 origin-top-right rounded-xl bg-[#0d1117] border border-white/10 shadow-xl overflow-hidden z-50">
                     <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
                       <span class="text-sm font-medium text-white">Notifications</span>
                       <button v-if="notifications.length || serverNotifications.length" @click="clearAll"
@@ -486,6 +486,7 @@
 </template>
 
 <script setup>
+import axios from 'axios'
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
@@ -633,14 +634,18 @@ function addAppealImage(e) {
 }
 
 function removeAppealImage(i) { appealImages.value.splice(i, 1) }
-
+const { removeServerNotification } = useNotifications()
 async function submitAppeal() {
   if (!appealText.value.trim()) return
   submittingAppeal.value = true
   appealMsg.value = ''
   try {
     const warningId = activeServerNotif.value?.data?.warning_id
-    if (!warningId) { appealMsg.value = 'Warning ID not found.'; return }
+    if (!warningId) {
+      appealMsg.value = 'Warning ID not found.'
+      submittingAppeal.value = false  // ← add this, otherwise the button stays stuck in "Submitting..." state
+      return
+    }
 
     const formData = new FormData()
     formData.append('apology_text', appealText.value)
@@ -653,7 +658,6 @@ async function submitAppeal() {
     appealSubmitted.value = true
     appealMsg.value = '✓ Appeal submitted!'
     showAppeal.value = false
-    const { removeServerNotification } = useNotifications()
     if (activeServerNotif.value?.id) {
       removeServerNotification(activeServerNotif.value.id)
     }

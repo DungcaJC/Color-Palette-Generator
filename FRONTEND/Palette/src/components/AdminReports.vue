@@ -64,7 +64,7 @@
     <div class="max-w-6xl mx-auto px-8 -mt-12 pb-16 flex flex-col gap-4">
 
       <!-- Filter bar -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex gap-3 flex-wrap items-center">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 md:flex md:items-center md:gap-4">
 
         <!-- Search -->
         <input
@@ -150,7 +150,7 @@
             class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-fade-in-up"
             :style="{ animationDelay: `${i * 0.04}s` }"
           >
-            <div class="flex gap-4 p-5">
+            <div class="flex flex-col sm:flex-row gap-4 p-4 sm:p-5">
               <div @click="openPostModal(report)" class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-700 shrink-0 cursor-pointer hover:opacity-80 transition">
                 <img v-if="report.post?.image" :src="getImageUrl(report.post.image)" class="w-full h-full object-cover" />
                 <div v-else class="w-full h-full flex items-center justify-center text-2xl">🎨</div>
@@ -173,7 +173,7 @@
                     <p class="text-xs text-gray-400">{{ formatDate(report.created_at) }}</p>
                   </div>
 
-                  <div class="flex flex-col gap-2 shrink-0">
+                  <div class="flex flex-wrap sm:flex-col gap-2 shrink-0">
                     <select v-model="report.status" @change="updatePostReportStatus(report)"
                       class="text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-1.5 focus:outline-none transition">
                       <option value="pending">Pending</option>
@@ -239,7 +239,7 @@
                   <p class="text-xs text-gray-400 mt-1">{{ formatDate(report.created_at) }}</p>
                 </div>
 
-                <div class="flex flex-col gap-2 shrink-0">
+                <div class="flex flex-wrap sm:flex-col gap-2 shrink-0">
                   <button @click="deleteReportedComment(report)" class="text-xs text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 px-3 py-1.5 rounded-lg transition">Delete Comment</button>
                   <button @click="openCommentWarning(report)" class="text-xs text-amber-500 hover:text-amber-700 border border-amber-200 hover:border-amber-400 px-3 py-1.5 rounded-lg transition">⚠️ Warning</button>
                   <button @click="openDirectBanComment(report)" class="text-xs text-red-600 hover:text-red-800 border border-red-300 hover:border-red-500 px-3 py-1.5 rounded-lg transition">🚫 Ban</button>

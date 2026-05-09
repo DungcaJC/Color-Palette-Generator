@@ -61,7 +61,7 @@
       </div>
     </div>
 
-    <div class="max-w-6xl mx-auto px-8 -mt-12 pb-16 flex flex-col gap-4">
+    <div class="max-w-6xl mx-auto px-4 sm:px-8 -mt-12 pb-16 flex flex-col gap-4">
 
       <!-- Replace the existing filter tabs div with this -->
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex gap-3 flex-wrap">
@@ -72,9 +72,9 @@
           class="flex-1 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-400 transition min-w-48"
           @input="fetchPalettes"
         />
-        <div class="flex gap-2 flex-wrap">
+        <div class="flex gap-2 overflow-x-auto pb-1 flex-nowrap sm:flex-wrap">
           <button v-for="tab in tabs" :key="tab.value" @click="activeTab = tab.value; fetchPalettes()"
-            class="px-4 py-2 rounded-full text-sm font-medium border transition"
+            class="px-4 py-2 rounded-full text-sm font-medium border transition shrink-0"
             :class="activeTab === tab.value ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white' : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:border-gray-400'"
           >{{ tab.label }}</button>
         </div>
@@ -168,10 +168,10 @@
           Delete <span class="font-medium text-gray-700 dark:text-gray-200">{{ deleteTarget.name }}</span> by {{ deleteTarget.user?.name }}?
         </p>
         <div class="flex gap-3">
-          <button @click="deleteTarget = null" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 hover:border-gray-400 transition">
+          <button @click="deleteTarget = null" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 hover:border-gray-400 transition shrink-0">
             Cancel
           </button>
-          <button @click="deletePalette" class="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition">
+          <button @click="deletePalette" class="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition shrink-0">
             Delete
           </button>
         </div>

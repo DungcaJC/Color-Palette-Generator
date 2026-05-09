@@ -13,7 +13,7 @@
 
   <div id="Generate-image" class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-8 transition-colors duration-300">
 
-    <div class="flex gap-10 w-full">
+    <div class="flex flex-col gap-5 w-full lg:w-96 lg:shrink-0">
 
       <!-- Left Panel -->
       <div class="flex flex-col gap-5 w-96 shrink-0">
@@ -40,7 +40,7 @@
           <div class="flex gap-2">
             <button
               v-for="n in [3, 5, 7, 9]" :key="n" @click="colorCount = n"
-              class="flex-1 py-2.5 rounded-full border text-sm font-medium transition"
+              class="flex-1 py-3 sm:py-2.5 rounded-full border text-sm font-medium transition"
               :class="colorCount === n
                 ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
                 : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:border-gray-400'"
@@ -56,7 +56,7 @@
           <div class="flex gap-2">
             <button
               v-for="n in [1, 3, 5, 7]" :key="n" @click="paletteCount = n"
-              class="flex-1 py-2.5 rounded-full border text-sm font-medium transition"
+              class="flex-1 py-3 sm:py-2.5 rounded-full border text-sm font-medium transition"
               :class="paletteCount === n
                 ? 'bg-black text-white border-black dark:bg-white dark:text-black dark:border-white'
                 : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-600 hover:border-gray-400'"
@@ -114,7 +114,7 @@
             </button>
           </div>
 
-          <div class="flex rounded-2xl overflow-hidden h-40 w-full shadow-sm">
+          <div class="flex rounded-2xl overflow-hidden h-28 sm:h-40 w-full shadow-sm">
             <div
               v-for="(color, ci) in palette" :key="ci"
               class="relative flex flex-col items-center justify-between py-3 cursor-pointer transition-all duration-300 ease-in-out"

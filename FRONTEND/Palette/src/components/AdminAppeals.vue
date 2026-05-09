@@ -95,7 +95,7 @@
           class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 animate-fade-in-up"
           :style="{ animationDelay: `${i * 0.05}s` }"
         >
-          <div class="flex items-start justify-between gap-4">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div class="flex-1 min-w-0">
 
               <!-- User info -->
@@ -137,7 +137,7 @@
             </div>
 
             <!-- Actions -->
-            <div v-if="appeal.status === 'pending'" class="flex flex-col gap-2 shrink-0 min-w-40">
+            <div v-if="appeal.status === 'pending'" class="flex flex-col gap-2 w-full sm:w-40 sm:shrink-0">
               <textarea v-model="appeal.adminResponse" placeholder="Admin response (optional)" rows="2"
                 class="w-full text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-3 py-2 focus:outline-none resize-none transition" style="white-space: pre-wrap; word-break: break-word;"></textarea>
               <button @click="reviewAppeal(appeal, 'accept')"

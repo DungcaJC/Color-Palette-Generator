@@ -2,19 +2,14 @@
   <!--HomepageContentFeatures.vue-->
 
   <section class="features-section">
-    <div
-      v-for="(feature, index) in features"
-      :key="feature.id"
-      class="feature"
-      :class="{ reverse: index % 2 !== 0 }"
-    >
+    <div v-for="(feature, index) in features" :key="feature.id" class="feature" :class="{ reverse: index % 2 !== 0 }">
       <div class="feature-text">
         <h2 class="feature-title" v-html="feature.title" />
         <p class="feature-desc">{{ feature.description }}</p>
       </div>
 
       <div class="feature-visual">
-        
+
         <slot :name="feature.id" />
       </div>
     </div>
@@ -82,7 +77,8 @@ const features = [
 .feature-title {
   font-family: 'Barlow Condensed', Impact, sans-serif;
   font-weight: 900;
-  font-size: clamp(72px, 9vw, 120px);
+  font-size: clamp(48px, 12vw, 120px);
+  word-break: break-word;
   line-height: 0.9;
   letter-spacing: -0.02em;
   text-transform: uppercase;
@@ -107,8 +103,14 @@ const features = [
   position: relative;
   overflow: hidden;
   background-size: cover;
-  background-attachment: fixed;
+  background-attachment: scroll;
   background-position: center;
+  min-height: 200px;
+}
+@media (max-width:768px) {
+  .feature-visual {
+    min-height: 180px;
+  }
 }
 
 .feature-number {
