@@ -34,7 +34,7 @@
         @click="cyclePaletteCount"
         class="px-6 py-3 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition min-w-32 text-center"
       >
-        {{ paletteCount }} Palette
+        {{ paletteCount === 'all' ? 'All Palettes' : `${paletteCount} Palettes` }}
       </button>
 
       <button
@@ -152,17 +152,19 @@ const copied = ref('')
 const savedMsg = ref('')
 const selectedIds = ref(new Set())
 
-const colorCounts = [3, 5, 7, 9]
+const colorCounts = [3, 5]
 const colorCountIndex = ref(1)
 const colorCount = computed(() => colorCounts[colorCountIndex.value])
 function cycleColorCount() { colorCountIndex.value = (colorCountIndex.value + 1) % colorCounts.length }
 
-const paletteCounts = [4, 8, 12, 16]
+const paletteCounts = [4, 8, 12, 16, 'all']
 const paletteCountIndex = ref(1)
 const paletteCount = computed(() => paletteCounts[paletteCountIndex.value])
 function cyclePaletteCount() { paletteCountIndex.value = (paletteCountIndex.value + 1) % paletteCounts.length }
 
-const displayedPalettes = computed(() => palettes.value.slice(0, paletteCount.value))
+const displayedPalettes = computed(() =>
+  paletteCount.value === 'all' ? palettes.value : palettes.value.slice(0, paletteCount.value)
+)
 
 async function search() {
   if (!keyword.value.trim()) { error.value = 'Please enter a keyword.'; return }
