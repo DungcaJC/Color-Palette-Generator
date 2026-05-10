@@ -14,7 +14,7 @@
         class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-fade-in-up">
 
         <!-- Avatar -->
-        <div class="flex items-center gap-6 px-8 py-6 border-b border-gray-100 dark:border-gray-700">
+        <div class="flex items-center gap-4 px-4 sm:px-8 py-6 border-b border-gray-100 dark:border-gray-700">
           <div class="relative group cursor-pointer shrink-0" @click="triggerAvatarUpload">
             <div
               class="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold select-none overflow-hidden bg-indigo-600">
@@ -51,22 +51,20 @@
 
         <!-- Stats -->
         <div
-          class="grid grid-cols-4 divide-x divide-gray-100 dark:divide-gray-700 border-b border-gray-100 dark:border-gray-700">
-          <div class="px-4 py-4 text-center">
+          class="grid grid-cols-4 divide-gray-100 dark:divide-gray-700 border-b border-gray-100 dark:border-gray-700">
+          <div class="text-center py-4 border-b border-r border-gray-100 dark:border-gray-700">
             <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ stats.total }}</p>
             <p class="text-xs text-gray-400 mt-0.5">Palettes</p>
           </div>
-          <div class="px-4 py-4 text-center">
+          <div class="text-center py-4 border-b border-gray-100 dark:border-gray-700">
             <p class="text-2xl font-bold text-orange-400">{{ myPosts.length }}</p>
             <p class="text-xs text-gray-400 mt-0.5">Posts</p>
           </div>
-          <button @click="openMyFollowers"
-            class="px-4 py-4 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+          <button @click="openMyFollowers" class="px-4 py-4 text-center border-r border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
             <p class="text-2xl font-bold text-indigo-400">{{ followersCount }}</p>
             <p class="text-xs text-gray-400 mt-0.5">Followers</p>
           </button>
-          <button @click="openMyFollowing"
-            class="px-4 py-4 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+          <button @click="openMyFollowing" class="px-4 py-4 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition">
             <p class="text-2xl font-bold text-teal-400">{{ followingCount }}</p>
             <p class="text-xs text-gray-400 mt-0.5">Following</p>
           </button>
@@ -173,7 +171,7 @@
         <div v-if="activeTab === 'posts'" class="p-6 animate-fade-in-up">
 
           <!-- Summary stats -->
-          <div class="grid grid-cols-3 gap-3 mb-5">
+          <div class="grid grid-cols-2 sm:grid-cols-4 divide-gray-100 dark:divide-gray-700 border-b border-gray-100 dark:border-gray-700">
             <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
               <p class="text-xl font-bold text-gray-800 dark:text-white">{{ myPosts.length }}</p>
               <p class="text-xs text-gray-400 mt-0.5">Posts</p>

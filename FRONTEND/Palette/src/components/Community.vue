@@ -4,14 +4,14 @@
 
     <!-- Header -->
     <div class="bg-[#0d1117] pt-8 pb-6 px-8">
-      <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 class="text-white text-2xl font-bold">🌍 Community</h1>
           <p class="text-gray-400 text-xs mt-0.5">Share your art and discover color palettes</p>
         </div>
 
         <!-- Search + toggle -->
-        <div class="flex flex-wrap gap-2 items-center justify-end">
+        <div class="flex flex-wrap gap-2 items-center justify-start sm:justify-end">
           <!-- Post / Person toggle -->
           <div class="flex bg-white/10 rounded-xl p-1 border border-white/10">
             <button
@@ -68,46 +68,35 @@
       </div>
     </div>
 
+    <!-- Mobile filter dropdown button -->
+    <div class="md:hidden px-4 pt-4 mb-0">
+      <button
+        @click="mobileFiltersOpen = !mobileFiltersOpen"
+        class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-sm font-medium"
+      >
+        <span>🔍 Filters</span>
+        <svg class="w-4 h-4 transition-transform" :class="mobileFiltersOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+    </div>
+
     <!-- Body: sidebar + content -->
-    <div class="max-w-7xl mx-auto px-4 md:px-8 py-6 flex gap-4 md:gap-6">
+    <div class="max-w-7xl mx-auto px-4 md:px-8 py-6 flex flex-col md:flex-row gap-4 md:gap-6">
 
-      <!-- Mobile filter dropdown button -->
-      <div class="md:hidden mb-4 w-full">
-        <button
-          @click="mobileFiltersOpen = !mobileFiltersOpen"
-          class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-sm font-medium"
-        >
-          <span>🔍 Filters</span>
-          <svg class="w-4 h-4 transition-transform" :class="mobileFiltersOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-      </div>
-
-      <!-- Left sidebar - hidden on mobile, shown as dropdown -->
-      <div v-show="mobileFiltersOpen" class="md:flex md:static inset-0 md:inset-auto top-16 left-0 right-0 bottom-0 z-40 md:z-auto bg-gray-50 dark:bg-gray-900 md:bg-transparent md:w-52 md:shrink-0 flex flex-col gap-4 md:p-0 p-4 max-h-[calc(100vh-5rem)] md:max-h-none overflow-y-auto md:overflow-visible">
-        <!-- Close button for mobile -->
-        <button
-          @click="mobileFiltersOpen = false"
-          class="md:hidden absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-        >
-          ✕
-        </button>
+      <!-- Mobile sidebar — shown only when dropdown is open -->
+      <div v-show="mobileFiltersOpen" class="fixed inset-0 z-40 bg-gray-50 dark:bg-gray-900 flex flex-col gap-4 p-4 overflow-y-auto md:hidden" style="top: 0">
+        <button @click="mobileFiltersOpen = false" class="self-end text-gray-400 hover:text-gray-600 text-lg">✕</button>
 
         <!-- Post Type -->
         <div>
           <p class="text-xs text-gray-400 uppercase tracking-widest font-medium px-1 mb-2">Post Type</p>
           <div class="flex flex-col gap-1.5">
-            <button
-              v-for="pt in postTypes" :key="pt.value"
-              @click="activePostType = pt.value; page = 1; fetchPosts()"
+            <button v-for="pt in postTypes" :key="pt.value"
+              @click="activePostType = pt.value; page = 1; fetchPosts(); mobileFiltersOpen = false"
               class="w-full text-left px-4 py-2.5 rounded-xl border text-sm font-medium transition flex items-center gap-2"
-              :class="activePostType === pt.value
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-indigo-300'"
-            >
-              <span>{{ pt.icon }}</span><span>{{ pt.label }}</span>
-            </button>
+              :class="activePostType === pt.value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-indigo-300'"
+            ><span>{{ pt.icon }}</span><span>{{ pt.label }}</span></button>
           </div>
         </div>
 
@@ -115,23 +104,44 @@
         <div>
           <p class="text-xs text-gray-400 uppercase tracking-widest font-medium px-1 mb-2">Categories</p>
           <div class="flex flex-col gap-1.5">
-            <button
-              v-for="cat in categories" :key="cat.value"
-              @click="activeCategory = cat.value; page = 1; fetchPosts()"
+            <button v-for="cat in categories" :key="cat.value"
+              @click="activeCategory = cat.value; page = 1; fetchPosts(); mobileFiltersOpen = false"
               class="w-full text-left px-4 py-2.5 rounded-xl border text-sm font-medium transition flex items-center gap-2"
-              :class="activeCategory === cat.value
-                ? 'bg-gray-800 dark:bg-white text-white dark:text-gray-900 border-gray-800 dark:border-white'
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400'"
-            >
-              <span>{{ cat.icon }}</span><span>{{ cat.label }}</span>
-            </button>
+              :class="activeCategory === cat.value ? 'bg-gray-800 dark:bg-white text-white dark:text-gray-900 border-gray-800 dark:border-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400'"
+            ><span>{{ cat.icon }}</span><span>{{ cat.label }}</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop sidebar — always visible on md+ -->
+      <div class="hidden md:flex flex-col gap-4 w-52 shrink-0">
+        <!-- Post Type -->
+        <div>
+          <p class="text-xs text-gray-400 uppercase tracking-widest font-medium px-1 mb-2">Post Type</p>
+          <div class="flex flex-col gap-1.5">
+            <button v-for="pt in postTypes" :key="pt.value"
+              @click="activePostType = pt.value; page = 1; fetchPosts()"
+              class="w-full text-left px-4 py-2.5 rounded-xl border text-sm font-medium transition flex items-center gap-2"
+              :class="activePostType === pt.value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-indigo-300'"
+            ><span>{{ pt.icon }}</span><span>{{ pt.label }}</span></button>
           </div>
         </div>
 
+        <!-- Categories -->
+        <div>
+          <p class="text-xs text-gray-400 uppercase tracking-widest font-medium px-1 mb-2">Categories</p>
+          <div class="flex flex-col gap-1.5">
+            <button v-for="cat in categories" :key="cat.value"
+              @click="activeCategory = cat.value; page = 1; fetchPosts()"
+              class="w-full text-left px-4 py-2.5 rounded-xl border text-sm font-medium transition flex items-center gap-2"
+              :class="activeCategory === cat.value ? 'bg-gray-800 dark:bg-white text-white dark:text-gray-900 border-gray-800 dark:border-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-gray-400'"
+            ><span>{{ cat.icon }}</span><span>{{ cat.label }}</span></button>
+          </div>
+        </div>
       </div>
 
       <!-- Right content -->
-      <div class="flex-1 min-w-0 md:mt-0 mt-4">
+      <div class="flex-1 min-w-0">
 
         <!-- Loading -->
         <div v-if="loading" class="flex justify-center py-24">

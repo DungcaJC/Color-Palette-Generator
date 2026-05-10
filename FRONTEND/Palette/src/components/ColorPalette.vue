@@ -101,7 +101,7 @@
       </div>
 
       <!-- Right Panel -->
-      <div class="flex-1 flex flex-col gap-5 justify-center">
+      <div class="flex-1 flex flex-col gap-5 justify-center min-w-0">
         <p v-if="!palettes.length" class="text-gray-300 dark:text-gray-600 text-sm m-auto text-center">
           Upload an image and hit Generate
         </p>
@@ -114,7 +114,7 @@
             </button>
           </div>
 
-          <div class="flex rounded-2xl overflow-hidden h-28 sm:h-40 w-full shadow-sm">
+          <div class="flex rounded-2xl overflow-hidden h-28 sm:h-40 w-full shadow-sm max-w-full">
             <div
               v-for="(color, ci) in palette" :key="ci"
               class="relative flex flex-col items-center justify-between py-3 cursor-pointer transition-all duration-300 ease-in-out"

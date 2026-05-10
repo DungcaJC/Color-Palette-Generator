@@ -1,6 +1,6 @@
 <template>
   <!--KeywordColorPalette.vue-->
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-8 transition-colors duration-300">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-8 transition-colors duration-300">
 
     <!-- Hero Section -->
     <div>
@@ -93,9 +93,9 @@
           </div>
         </div>
 
-        <div class="flex px-1 pt-2 pb-1 bg-amber-50 dark:bg-gray-800">
-          <div v-for="(color, ci) in palette.colors.slice(0, colorCount)" :key="ci" class="flex-1 text-center">
-            <span class="font-mono text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition" style="font-size: 9px;" @click="copyHex(color)">
+        <div class="flex px-1 pt-2 pb-1 bg-amber-50 dark:bg-gray-800 overflow-hidden">
+          <div v-for="(color, ci) in palette.colors.slice(0, colorCount)" :key="ci" class="flex-1 text-center min-w-0">
+            <span class="font-mono text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition block truncate" style="font-size: 9px;" @click="copyHex(color)">
               {{ color }}
             </span>
           </div>

@@ -151,7 +151,7 @@
                   leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100"
                   leave-to-class="transform opacity-0 scale-95">
                   <div v-if="notifOpen"
-                    class="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-80 origin-top-right rounded-xl bg-[#0d1117] border border-white/10 shadow-xl overflow-hidden z-50">
+                    class="fixed left-2 right-2 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 sm:max-w-80 origin-top-right rounded-xl bg-[#0d1117] border border-white/10 shadow-xl overflow-hidden z-50">
                     <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
                       <span class="text-sm font-medium text-white">Notifications</span>
                       <button v-if="notifications.length || serverNotifications.length" @click="clearAll"
