@@ -62,7 +62,7 @@
 
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex gap-3">
         <input v-model="search" type="text" placeholder="Search by name or email..." class="flex-1 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-400 transition" @input="fetchUsers" />
-        <button @click="fetchUsers" class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 transition">Search</button>
+        <button @click="fetchUsers" class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 transition shrink-0">Search</button>
       </div>
 
       <div v-if="loading" class="flex justify-center py-24">

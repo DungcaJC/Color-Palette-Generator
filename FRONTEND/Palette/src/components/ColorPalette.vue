@@ -114,11 +114,11 @@
             </button>
           </div>
 
-          <div class="flex rounded-2xl overflow-hidden h-28 sm:h-40 w-full shadow-sm max-w-full">
+          <div class="flex rounded-2xl overflow-x-auto h-28 sm:h-40 w-full shadow-sm">
             <div
               v-for="(color, ci) in palette" :key="ci"
-              class="relative flex flex-col items-center justify-between py-3 cursor-pointer transition-all duration-300 ease-in-out"
-              :style="{ backgroundColor: color.css, flex: hoveredPalette === pi && hoveredColor === ci ? 3 : 1 }"
+              class="relative flex flex-col items-center justify-between py-3 cursor-pointer transition-all duration-300 ease-in-out shrink-0"
+              :style="{ backgroundColor: color.css, flex: hoveredPalette === pi && hoveredColor === ci ? 3 : 1, minWidth: '48px' }"
               :class="{ 'ring-4 ring-white ring-inset': isSelected(pi, ci) }"
               @mouseenter="hoveredPalette = pi; hoveredColor = ci"
               @mouseleave="hoveredPalette = null; hoveredColor = null"

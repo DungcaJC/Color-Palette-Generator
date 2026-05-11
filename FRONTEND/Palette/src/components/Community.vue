@@ -11,7 +11,7 @@
         </div>
 
         <!-- Search + toggle -->
-        <div class="flex flex-wrap gap-2 items-center justify-start sm:justify-end">
+        <div class="flex gap-2 items-center">
           <!-- Post / Person toggle -->
           <div class="flex bg-white/10 rounded-xl p-1 border border-white/10">
             <button
@@ -36,12 +36,13 @@
             </button>
           </div>
 
-          <div class="flex bg-white/10 rounded-xl overflow-hidden border border-white/10">
+          <!-- Search input -->
+          <div class="flex bg-white/10 rounded-xl overflow-hidden border border-white/10 flex-1 min-w-0">
             <input
               v-model="search"
               type="text"
               :placeholder="searchType === 'posts' ? 'Search posts...' : 'Search people...'"
-              class="bg-transparent px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none w-32 sm:w-48"
+              class="bg-transparent px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none w-full min-w-0"
               @keyup.enter="fetchPosts"
             />
             <button @click="fetchPosts" class="px-3 text-gray-400 hover:text-white transition">
@@ -52,18 +53,16 @@
           </div>
 
           <!-- Sort -->
-          <div class="flex bg-white/10 rounded-xl p-1 border border-white/10">
-            <button @click="sort = 'latest'; fetchPosts()" class="px-3 py-1.5 rounded-lg text-xs font-medium transition" :class="sort === 'latest' ? 'bg-white text-gray-900' : 'text-gray-400 hover:text-white'">🕐 Latest</button>
-            <button @click="sort = 'popular'; fetchPosts()" class="px-3 py-1.5 rounded-lg text-xs font-medium transition" :class="sort === 'popular' ? 'bg-white text-gray-900' : 'text-gray-400 hover:text-white'">🔥 Popular</button>
+          <div class="flex gap-2 items-center">
+            <div class="flex bg-white/10 rounded-xl p-1 border border-white/10">
+              <button @click="sort = 'latest'; fetchPosts()" class="px-3 py-1.5 rounded-lg text-xs font-medium transition" :class="sort === 'latest' ? 'bg-white text-gray-900' : 'text-gray-400 hover:text-white'">🕐 Latest</button>
+              <button @click="sort = 'popular'; fetchPosts()" class="px-3 py-1.5 rounded-lg text-xs font-medium transition" :class="sort === 'popular' ? 'bg-white text-gray-900' : 'text-gray-400 hover:text-white'">🔥 Popular</button>
+            </div>
+            <button @click="showCreateModal = true" class="px-4 py-2 rounded-xl text-white text-sm font-medium transition flex items-center gap-1.5 ml-auto" style="background: #8c2eff">
+              <span>+</span> Post
+            </button>
           </div>
-
-          <button
-            @click="showCreateModal = true"
-            class="px-4 py-2 rounded-xl text-white text-sm font-medium transition flex items-center gap-1.5"
-            style="background: #8c2eff"
-          >
-            <span>+</span> Post
-          </button>
+          
         </div>
       </div>
     </div>
@@ -359,7 +358,7 @@
               </div>
               <div class="flex-1 flex gap-2">
                 <input v-model="newComment" type="text" placeholder="Write a comment..."
-                  class="flex-1 text-xs md:text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-400 transition"
+                  class="flex-1 min-w-0 text-xs md:text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-400 transition"
                   @keyup.enter="submitComment" />
                 <button @click="submitComment" :disabled="!newComment.trim()" class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs md:text-sm disabled:opacity-40 transition hover:bg-indigo-500 shrink-0 whitespace-nowrap">Post</button>
               </div>
