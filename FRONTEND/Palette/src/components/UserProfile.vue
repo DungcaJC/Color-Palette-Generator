@@ -2,28 +2,30 @@
   <!--UserProfile.vue-->
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 
-    <div class="bg-[#0d1117] pt-10 pb-20 px-8 text-center">
+    <div class="bg-[#0d1117] pt-10 pb-20 px-4 text-center">
       <div class="max-w-3xl mx-auto">
         <h1 class="text-white text-2xl font-semibold">Your Profile</h1>
         <p class="text-gray-400 text-sm mt-1">Manage your personal information</p>
       </div>
     </div>
 
-    <div class="max-w-3xl mx-auto px-8 -mt-12 pb-16">
+    <!-- FIXED: px-8 → px-3 sm:px-8 so card doesn't get clipped on mobile -->
+    <div class="max-w-3xl mx-auto px-3 sm:px-8 -mt-12 pb-16">
       <div
         class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden animate-fade-in-up">
 
         <!-- Avatar -->
-        <div class="flex items-center gap-4 px-4 sm:px-8 py-6 border-b border-gray-100 dark:border-gray-700">
+        <div class="flex items-center gap-3 px-4 sm:px-8 py-5 border-b border-gray-100 dark:border-gray-700">
+          <!-- FIXED: avatar size shrinks on mobile -->
           <div class="relative group cursor-pointer shrink-0" @click="triggerAvatarUpload">
             <div
-              class="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold select-none overflow-hidden bg-indigo-600">
+              class="w-14 h-14 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold select-none overflow-hidden bg-indigo-600">
               <img v-if="avatarUrl" :src="avatarUrl" class="w-full h-full object-cover" />
               <span v-else>{{ userInitial }}</span>
             </div>
             <div
               class="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+              <svg class="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round"
                   d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -33,10 +35,11 @@
             <input ref="avatarInput" type="file" accept="image/*" class="hidden" @change="onAvatarChange" />
           </div>
           <div class="flex-1 min-w-0">
-            <p class="text-base font-semibold text-gray-800 dark:text-white">{{ user?.name }}</p>
-            <p class="text-sm text-gray-400">{{ user?.email }}</p>
+            <!-- FIXED: truncate long name/email on mobile -->
+            <p class="text-sm sm:text-base font-semibold text-gray-800 dark:text-white truncate">{{ user?.name }}</p>
+            <p class="text-xs sm:text-sm text-gray-400 truncate">{{ user?.email }}</p>
             <div class="flex items-center gap-1.5 mt-1">
-              <span class="w-2 h-2 rounded-full"
+              <span class="w-2 h-2 rounded-full shrink-0"
                 :class="user?.role === 'superadmin' ? 'bg-red-500' : user?.role === 'admin' ? 'bg-blue-500' : 'bg-green-500'"></span>
               <span class="text-xs"
                 :class="user?.role === 'superadmin' ? 'text-red-400' : user?.role === 'admin' ? 'text-blue-400' : 'text-green-400'">{{
@@ -50,37 +53,38 @@
         </div>
 
         <!-- Stats -->
-        <div
-          class="grid grid-cols-4 divide-gray-100 dark:divide-gray-700 border-b border-gray-100 dark:border-gray-700">
-          <div class="text-center py-4 border-b border-r border-gray-100 dark:border-gray-700">
-            <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ stats.total }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">Palettes</p>
+        <!-- FIXED: number font size shrinks on mobile so "Following" doesn't clip -->
+        <div class="grid grid-cols-4 border-b border-gray-100 dark:border-gray-700">
+          <div class="text-center py-3 sm:py-4 border-r border-gray-100 dark:border-gray-700">
+            <p class="text-base sm:text-2xl font-bold text-gray-800 dark:text-white">{{ stats.total }}</p>
+            <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Palettes</p>
           </div>
-          <div class="text-center py-4 border-b border-gray-100 dark:border-gray-700">
-            <p class="text-2xl font-bold text-orange-400">{{ myPosts.length }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">Posts</p>
+          <div class="text-center py-3 sm:py-4 border-r border-gray-100 dark:border-gray-700">
+            <p class="text-base sm:text-2xl font-bold text-orange-400">{{ myPosts.length }}</p>
+            <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Posts</p>
           </div>
-          <button @click="openMyFollowers" class="px-4 py-4 text-center border-r border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            <p class="text-2xl font-bold text-indigo-400">{{ followersCount }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">Followers</p>
+          <button @click="openMyFollowers" class="py-3 sm:py-4 text-center border-r border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            <p class="text-base sm:text-2xl font-bold text-indigo-400">{{ followersCount }}</p>
+            <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Followers</p>
           </button>
-          <button @click="openMyFollowing" class="px-4 py-4 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            <p class="text-2xl font-bold text-teal-400">{{ followingCount }}</p>
-            <p class="text-xs text-gray-400 mt-0.5">Following</p>
+          <button @click="openMyFollowing" class="py-3 sm:py-4 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            <p class="text-base sm:text-2xl font-bold text-teal-400">{{ followingCount }}</p>
+            <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Following</p>
           </button>
         </div>
 
         <!-- Tab bar -->
+        <!-- FIXED: smaller text on mobile so emoji + label fits -->
         <div class="flex border-b border-gray-100 dark:border-gray-700">
-          <button @click="activeTab = 'profile'" class="flex-1 py-3 text-sm font-medium transition border-b-2"
+          <button @click="activeTab = 'profile'" class="flex-1 py-3 text-xs sm:text-sm font-medium transition border-b-2"
             :class="activeTab === 'profile' ? 'border-indigo-500 text-indigo-500' : 'border-transparent text-gray-400 hover:text-gray-600'">
             👤 Profile
           </button>
-          <button @click="activeTab = 'posts'" class="flex-1 py-3 text-sm font-medium transition border-b-2"
+          <button @click="activeTab = 'posts'" class="flex-1 py-3 text-xs sm:text-sm font-medium transition border-b-2"
             :class="activeTab === 'posts' ? 'border-indigo-500 text-indigo-500' : 'border-transparent text-gray-400 hover:text-gray-600'">
             🖼 My Posts
           </button>
-          <button @click="activeTab = 'warnings'" class="flex-1 py-3 text-sm font-medium transition border-b-2"
+          <button @click="activeTab = 'warnings'" class="flex-1 py-3 text-xs sm:text-sm font-medium transition border-b-2"
             :class="activeTab === 'warnings' ? 'border-indigo-500 text-indigo-500' : 'border-transparent text-gray-400 hover:text-gray-600'">
             ⚠️ Warnings
           </button>
@@ -90,7 +94,8 @@
         <div v-if="activeTab === 'profile'" class="animate-fade-in-up">
 
           <!-- Bio -->
-          <div class="px-8 pt-6 pb-2">
+          <!-- FIXED: px-8 → px-4 sm:px-8 throughout profile tab -->
+          <div class="px-4 sm:px-8 pt-6 pb-2">
             <label class="text-xs font-medium text-gray-400 uppercase tracking-widest mb-2 block">Bio</label>
             <textarea v-model="bio" maxlength="500" rows="3" placeholder="Tell the community about yourself..."
               @input="autoResize($event)"
@@ -112,15 +117,14 @@
           </div>
 
           <!-- Form Fields -->
-          <div class="px-8 py-6 flex flex-col gap-5">
+          <div class="px-4 sm:px-8 py-6 flex flex-col gap-5">
             <div>
-              <label class="text-xs font-medium text-gray-400 uppercase tracking-widest mb-1.5 block">Display
-                Name</label>
-              <div class="flex gap-3">
+              <label class="text-xs font-medium text-gray-400 uppercase tracking-widest mb-1.5 block">Display Name</label>
+              <div class="flex gap-2 sm:gap-3">
                 <input v-model="newName" type="text" :placeholder="user?.name || 'Your name'"
-                  class="flex-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-400 transition" />
+                  class="flex-1 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-3 sm:px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-400 transition" />
                 <button @click="saveName" :disabled="!newName.trim() || newName === user?.name"
-                  class="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium disabled:opacity-40 hover:bg-indigo-500 transition">Save</button>
+                  class="px-3 sm:px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium disabled:opacity-40 hover:bg-indigo-500 transition shrink-0">Save</button>
               </div>
               <p v-if="nameMsg" class="text-xs mt-1.5"
                 :class="nameMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ nameMsg }}</p>
@@ -133,15 +137,14 @@
             </div>
 
             <div>
-              <label class="text-xs font-medium text-gray-400 uppercase tracking-widest mb-1.5 block">Member
-                Since</label>
+              <label class="text-xs font-medium text-gray-400 uppercase tracking-widest mb-1.5 block">Member Since</label>
               <input :value="memberSince" disabled
                 class="w-full border border-gray-100 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-400 cursor-not-allowed" />
             </div>
           </div>
 
           <!-- Change Password -->
-          <div class="px-8 py-6 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-4">
+          <div class="px-4 sm:px-8 py-6 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-4">
             <p class="text-sm font-semibold text-gray-700 dark:text-gray-200">Change Password</p>
             <div>
               <label class="text-xs text-gray-400 mb-1 block">Current Password</label>
@@ -168,21 +171,21 @@
         </div>
 
         <!-- ─── My Posts Tab ─── -->
-        <div v-if="activeTab === 'posts'" class="p-6 animate-fade-in-up">
+        <div v-if="activeTab === 'posts'" class="p-3 sm:p-6 animate-fade-in-up">
 
           <!-- Summary stats -->
-          <div class="grid grid-cols-2 sm:grid-cols-4 divide-gray-100 dark:divide-gray-700 border-b border-gray-100 dark:border-gray-700">
-            <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
-              <p class="text-xl font-bold text-gray-800 dark:text-white">{{ myPosts.length }}</p>
-              <p class="text-xs text-gray-400 mt-0.5">Posts</p>
+          <div class="grid grid-cols-3 gap-2 mb-4">
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+              <p class="text-lg sm:text-xl font-bold text-gray-800 dark:text-white">{{ myPosts.length }}</p>
+              <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Posts</p>
             </div>
-            <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
-              <p class="text-xl font-bold text-red-400">{{ totalLikes }}</p>
-              <p class="text-xs text-gray-400 mt-0.5">Total Likes</p>
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+              <p class="text-lg sm:text-xl font-bold text-red-400">{{ totalLikes }}</p>
+              <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Total Likes</p>
             </div>
-            <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 text-center">
-              <p class="text-xl font-bold text-indigo-400">{{ totalSaves }}</p>
-              <p class="text-xs text-gray-400 mt-0.5">Total Saves</p>
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-xl p-3 text-center">
+              <p class="text-lg sm:text-xl font-bold text-indigo-400">{{ totalSaves }}</p>
+              <p class="text-[10px] sm:text-xs text-gray-400 mt-0.5">Total Saves</p>
             </div>
           </div>
 
@@ -190,28 +193,24 @@
             You haven't posted anything yet.
           </div>
 
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-3 gap-2 sm:gap-3">
             <div v-for="(post, i) in myPosts" :key="post.id" @click="openMyPost(post)"
               class="rounded-xl overflow-hidden cursor-pointer hover:opacity-80 transition bg-gray-100 dark:bg-gray-700 flex flex-col">
-              <!-- Image or palette swatch -->
               <div class="aspect-square relative bg-gray-200 dark:bg-gray-600">
-                <img v-if="post.image" :src="getImageUrl(post.image)"
-                  class="w-full h-full object-cover" />
+                <img v-if="post.image" :src="getImageUrl(post.image)" class="w-full h-full object-cover" />
                 <div v-else class="w-full h-full flex flex-col">
                   <div class="flex flex-1">
                     <div v-for="(c, ci) in (post.colors || []).slice(0, 5)" :key="ci" class="flex-1"
                       :style="{ backgroundColor: c }"></div>
                   </div>
-                  <div class="flex items-center justify-center py-2 bg-white/10">
+                  <div class="flex items-center justify-center py-1.5 bg-white/10">
                     <span class="text-xs text-white">🎨 Palette</span>
                   </div>
                 </div>
               </div>
-
-              <!-- Stats strip -->
-              <div class="px-2 py-1.5 flex items-center justify-between bg-white dark:bg-gray-800">
-                <span class="text-xs text-gray-400 truncate max-w-16">{{ post.category }}</span>
-                <div class="flex items-center gap-2 text-xs text-gray-400 shrink-0">
+              <div class="px-1.5 sm:px-2 py-1.5 flex items-center justify-between bg-white dark:bg-gray-800">
+                <span class="text-[10px] sm:text-xs text-gray-400 truncate max-w-12 sm:max-w-16">{{ post.category }}</span>
+                <div class="flex items-center gap-1 sm:gap-2 text-[10px] sm:text-xs text-gray-400 shrink-0">
                   <span>❤️ {{ post.likes_count }}</span>
                   <span>🔖 {{ post.saves_count }}</span>
                 </div>
@@ -221,23 +220,21 @@
         </div>
 
         <!-- ─── Warnings Tab ─── -->
-        <div v-if="activeTab === 'warnings'" class="p-6 animate-fade-in-up">
+        <div v-if="activeTab === 'warnings'" class="p-3 sm:p-6 animate-fade-in-up">
           <div v-if="user?.strikes"
             class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4">
             <p class="text-sm font-medium text-red-700 dark:text-red-400">⚠️ You have {{ user.strikes }} strike{{
               user.strikes > 1 ? 's' : '' }}</p>
-            <p class="text-xs text-red-500 mt-0.5">At 3 strikes = 1 day ban · 5 = 1 week · 10 = 1 month · 15 = 1 year
-            </p>
+            <p class="text-xs text-red-500 mt-0.5">At 3 strikes = 1 day ban · 5 = 1 week · 10 = 1 month · 15 = 1 year</p>
           </div>
 
           <p v-if="warningsLoading" class="text-center py-8 text-gray-400">Loading...</p>
-          <p v-else-if="myWarnings.length === 0" class="text-center py-8 text-gray-400 text-sm">No warnings. You're all
-            good! ✅</p>
+          <p v-else-if="myWarnings.length === 0" class="text-center py-8 text-gray-400 text-sm">No warnings. You're all good! ✅</p>
           <div v-else class="flex flex-col gap-4">
             <div v-for="warning in myWarnings" :key="warning.id"
-              class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4">
-              <div class="flex items-start justify-between gap-4">
-                <div class="flex-1">
+              class="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-3 sm:p-4">
+              <div class="flex items-start justify-between gap-2 sm:gap-4">
+                <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2 mb-2">
                     <span class="text-lg">⚠️</span>
                     <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Warning</span>
@@ -247,20 +244,16 @@
                     }">{{ warning.status }}</span>
                   </div>
                   <p class="text-xs text-gray-500 mb-2">{{ formatDate(warning.created_at) }}</p>
-                  <div
-                    class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
-                    <p class="text-xs font-medium text-amber-700 dark:text-amber-400">Category: {{
-                      warning.report_category }}</p>
-                    <p class="text-xs text-amber-600 dark:text-amber-300 mt-1">{{ warning.auto_caption ||
-                      warning.admin_text }}</p>
+                  <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3 mb-3">
+                    <p class="text-xs font-medium text-amber-700 dark:text-amber-400">Category: {{ warning.report_category }}</p>
+                    <p class="text-xs text-amber-600 dark:text-amber-300 mt-1">{{ warning.auto_caption || warning.admin_text }}</p>
                   </div>
-                  <p v-if="warning.expires_at" class="text-xs text-gray-400 mb-3">Expires: {{
-                    formatDate(warning.expires_at) }}</p>
+                  <p v-if="warning.expires_at" class="text-xs text-gray-400 mb-3">Expires: {{ formatDate(warning.expires_at) }}</p>
                 </div>
                 <div class="shrink-0">
                   <button v-if="!warning.appeal" @click="openAppealModal(warning)"
-                    class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-500 transition">
-                    📤 Submit Appeal
+                    class="px-2 sm:px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-500 transition whitespace-nowrap">
+                    📤 Appeal
                   </button>
                   <div v-else class="text-right">
                     <span class="text-xs px-2 py-1 rounded-full font-medium" :class="{
@@ -268,8 +261,7 @@
                       'bg-green-50 dark:bg-green-900/30 text-green-600': warning.appeal.status === 'accepted',
                       'bg-red-50 dark:bg-red-900/30 text-red-600': warning.appeal.status === 'rejected',
                     }">{{ warning.appeal.status }}</span>
-                    <p v-if="warning.appeal.admin_response" class="text-xs text-gray-500 mt-1">Admin response: {{
-                      warning.appeal.admin_response }}</p>
+                    <p v-if="warning.appeal.admin_response" class="text-xs text-gray-500 mt-1">Admin: {{ warning.appeal.admin_response }}</p>
                   </div>
                 </div>
               </div>
@@ -280,16 +272,17 @@
       </div>
     </div>
 
-    <!-- ─── My Post View Modal (full Community-style) ─── -->
-    <div v-if="activeMyPost" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4"
+    <!-- ─── My Post View Modal ─── -->
+    <div v-if="activeMyPost" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-2 sm:px-4"
       @click.self="activeMyPost = null">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex overflow-hidden">
+      <!-- FIXED: on mobile stack vertically instead of side-by-side -->
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col sm:flex-row overflow-hidden">
 
-        <!-- Left: image or palette -->
-        <div class="w-1/2 bg-black flex items-center justify-center shrink-0">
+        <!-- Image / palette — full width on mobile, half on sm+ -->
+        <div class="w-full sm:w-1/2 bg-black flex items-center justify-center shrink-0 max-h-52 sm:max-h-none">
           <img v-if="activeMyPost.image" :src="`http://localhost:8000/storage/${activeMyPost.image}`"
-            class="w-full h-full object-contain max-h-[90vh]" />
-          <div v-else class="w-full h-full flex flex-col p-8 gap-2">
+            class="w-full h-full object-contain" />
+          <div v-else class="w-full h-full flex flex-col p-4 sm:p-8 gap-2">
             <div class="flex flex-1 rounded-xl overflow-hidden">
               <div v-for="(c, ci) in (activeMyPost.colors || [])" :key="ci" class="flex-1"
                 :style="{ backgroundColor: c }"></div>
@@ -299,14 +292,11 @@
 
         <!-- Right: details -->
         <div class="flex-1 flex flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-
-          <!-- Header -->
-          <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <div class="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-gray-100 dark:border-gray-700">
             <div class="flex items-center gap-3">
               <div
-                class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
-                <img v-if="user?.avatar" :src="user.avatar"
-                  class="w-full h-full object-cover" />
+                class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
+                <img v-if="user?.avatar" :src="user.avatar" class="w-full h-full object-cover" />
                 <span v-else>{{ userInitial }}</span>
               </div>
               <div>
@@ -317,39 +307,28 @@
             <button @click="activeMyPost = null" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
           </div>
 
-          <!-- Category + caption -->
-          <div class="px-5 py-4">
-            <span
-              class="inline-block bg-indigo-50 dark:bg-indigo-900/40 text-indigo-500 text-xs px-2.5 py-1 rounded-full mb-3">{{
-                activeMyPost.category }}</span>
-            <p v-if="activeMyPost.caption" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{{
-              activeMyPost.caption }}</p>
+          <div class="px-4 sm:px-5 py-4">
+            <span class="inline-block bg-indigo-50 dark:bg-indigo-900/40 text-indigo-500 text-xs px-2.5 py-1 rounded-full mb-3">{{ activeMyPost.category }}</span>
+            <p v-if="activeMyPost.caption" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{{ activeMyPost.caption }}</p>
           </div>
 
-          <!-- Palette colors -->
-          <div v-if="activeMyPost.colors && activeMyPost.colors.length" class="px-5 pb-4">
+          <div v-if="activeMyPost.colors && activeMyPost.colors.length" class="px-4 sm:px-5 pb-4">
             <p class="text-xs text-gray-400 uppercase tracking-widest mb-2">Palette</p>
             <div class="flex gap-2 flex-wrap">
               <div v-for="(color, i) in activeMyPost.colors" :key="i"
-                class="w-10 h-10 rounded-lg cursor-pointer hover:scale-110 transition-transform"
+                class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg cursor-pointer hover:scale-110 transition-transform"
                 :style="{ backgroundColor: color }" :title="color" @click="copyHex(color)"></div>
             </div>
             <p v-if="copiedHex" class="text-xs text-green-500 mt-1">✓ Copied {{ copiedHex }}</p>
           </div>
 
-          <!-- Comments section -->
-          <div
-            class="px-5 py-3 border-t border-gray-100 dark:border-gray-700 flex-1 flex flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div class="px-4 sm:px-5 py-3 border-t border-gray-100 dark:border-gray-700 flex-1 flex flex-col overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <p class="text-xs text-gray-400 uppercase tracking-widest mb-3">Comments ({{ comments.length }})</p>
-
             <div class="flex flex-col gap-3 mb-3">
               <div v-for="comment in comments" :key="comment.id" class="flex flex-col gap-1">
-                <!-- Main comment -->
                 <div class="flex gap-2 group">
-                  <div
-                    class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
-                    <img v-if="comment.user?.avatar" :src="getImageUrl(comment.user.avatar)"
-                      class="w-full h-full object-cover" />
+                  <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
+                    <img v-if="comment.user?.avatar" :src="getImageUrl(comment.user.avatar)" class="w-full h-full object-cover" />
                     <span v-else>{{ comment.user?.name?.charAt(0).toUpperCase() }}</span>
                   </div>
                   <div class="flex-1 min-w-0">
@@ -357,27 +336,22 @@
                       <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">{{ comment.user?.name }}</p>
                       <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5" style="white-space: pre-wrap; word-break: break-word;">{{ comment.content }}</p>
                     </div>
-                    <div class="flex items-center gap-3 mt-1 px-1">
+                    <div class="flex items-center gap-2 sm:gap-3 mt-1 px-1 flex-wrap">
                       <button @click="toggleCommentLike(comment)" class="text-xs transition"
                         :class="comment.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">
                         ❤️ {{ comment.likes_count }}
                       </button>
-                      <button @click="replyTarget = comment; replyText = ''"
-                        class="text-xs text-gray-400 hover:text-indigo-500 transition">Reply</button>
-                      <button @click="openCommentReport(comment)"
-                        class="text-xs text-gray-400 hover:text-gray-600 transition">Report</button>
+                      <button @click="replyTarget = comment; replyText = ''" class="text-xs text-gray-400 hover:text-indigo-500 transition">Reply</button>
+                      <button @click="openCommentReport(comment)" class="text-xs text-gray-400 hover:text-gray-600 transition">Report</button>
                       <button v-if="comment.user_id === user?.id || isAdmin()" @click="deleteComment(comment.id)"
                         class="text-xs text-red-400 hover:text-red-600 transition opacity-0 group-hover:opacity-100">Delete</button>
                       <span class="text-xs text-gray-400 ml-auto">{{ formatDate(comment.created_at) }}</span>
                     </div>
 
-                    <!-- Replies -->
                     <div v-if="comment.replies && comment.replies.length" class="mt-2 ml-4 flex flex-col gap-2">
                       <div v-for="reply in comment.replies" :key="reply.id" class="flex gap-2 group">
-                        <div
-                          class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
-                          <img v-if="reply.user?.avatar" :src="getImageUrl(reply.user.avatar)"
-                            class="w-full h-full object-cover" />
+                        <div class="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
+                          <img v-if="reply.user?.avatar" :src="getImageUrl(reply.user.avatar)" class="w-full h-full object-cover" />
                           <span v-else>{{ reply.user?.name?.charAt(0).toUpperCase() }}</span>
                         </div>
                         <div class="flex-1 min-w-0">
@@ -385,10 +359,9 @@
                             <p class="text-xs font-semibold text-gray-700 dark:text-gray-200">{{ reply.user?.name }}</p>
                             <p class="text-sm text-gray-600 dark:text-gray-300 mt-0.5" style="white-space: pre-wrap; word-break: break-word;">{{ reply.content }}</p>
                           </div>
-                          <div class="flex items-center gap-3 mt-1 px-1">
+                          <div class="flex items-center gap-2 sm:gap-3 mt-1 px-1">
                             <button @click="toggleCommentLike(reply)" class="text-xs transition"
-                              :class="reply.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">❤️ {{
-                                reply.likes_count }}</button>
+                              :class="reply.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">❤️ {{ reply.likes_count }}</button>
                             <button v-if="reply.user_id === user?.id || isAdmin()" @click="deleteComment(reply.id)"
                               class="text-xs text-red-400 hover:text-red-600 transition opacity-0 group-hover:opacity-100">Delete</button>
                             <span class="text-xs text-gray-400 ml-auto">{{ formatDate(reply.created_at) }}</span>
@@ -397,20 +370,16 @@
                       </div>
                     </div>
 
-                    <!-- Reply input -->
                     <div v-if="replyTarget?.id === comment.id" class="mt-2 ml-4 flex gap-2">
                       <input v-model="replyText" type="text" :placeholder="`Reply to ${comment.user?.name}...`"
                         class="flex-1 text-xs border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-3 py-2 focus:outline-none focus:border-indigo-400 transition"
                         @keyup.enter="submitReply(comment.id)" />
-                      <button @click="submitReply(comment.id)"
-                        class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs transition hover:bg-indigo-500">Reply</button>
+                      <button @click="submitReply(comment.id)" class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs transition hover:bg-indigo-500">Reply</button>
                       <button @click="replyTarget = null" class="text-xs text-gray-400 hover:text-gray-600">✕</button>
                     </div>
 
-                    <div v-if="reportCommentTarget"
-                      class="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4">
-                      <div
-                        class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm p-6 flex flex-col gap-4">
+                    <div v-if="reportCommentTarget" class="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4">
+                      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-sm p-6 flex flex-col gap-4">
                         <h2 class="text-base font-semibold text-gray-800 dark:text-white">Report Comment</h2>
                         <div class="flex flex-col gap-2">
                           <label v-for="topic in reportTopics" :key="topic.value"
@@ -423,12 +392,9 @@
                         </div>
                         <textarea v-model="commentReport.details" placeholder="Details (optional)" rows="2"
                           class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none resize-none" style="white-space: pre-wrap; word-break: break-word;"></textarea>
-                        <p v-if="commentReportMsg" class="text-xs"
-                          :class="commentReportMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{
-                            commentReportMsg }}</p>
+                        <p v-if="commentReportMsg" class="text-xs" :class="commentReportMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ commentReportMsg }}</p>
                         <div class="flex gap-3">
-                          <button @click="reportCommentTarget = null"
-                            class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
+                          <button @click="reportCommentTarget = null" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
                           <button @click="submitCommentReport" :disabled="!commentReport.topic || commentReporting"
                             class="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium disabled:opacity-40 transition">Report</button>
                         </div>
@@ -437,17 +403,12 @@
                   </div>
                 </div>
               </div>
-
-              <p v-if="!comments.length" class="text-xs text-gray-400 text-center py-3">No comments yet. Be the first!
-              </p>
+              <p v-if="!comments.length" class="text-xs text-gray-400 text-center py-3">No comments yet. Be the first!</p>
             </div>
 
-            <!-- New comment input -->
             <div class="flex gap-2 mt-auto pt-2 border-t border-gray-100 dark:border-gray-700">
-              <div
-                class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
-                <img v-if="user?.avatar" :src="user.avatar"
-                  class="w-full h-full object-cover" />
+              <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden shrink-0">
+                <img v-if="user?.avatar" :src="user.avatar" class="w-full h-full object-cover" />
                 <span v-else>{{ userInitial }}</span>
               </div>
               <div class="flex-1 flex gap-2">
@@ -460,39 +421,26 @@
             </div>
           </div>
 
-          <!-- Actions bar -->
-          <div
-            class="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0">
-            <div class="flex items-center gap-4">
-              <!-- Like -->
+          <div class="px-4 sm:px-5 py-3 sm:py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between shrink-0">
+            <div class="flex items-center gap-3 sm:gap-4">
               <button @click="toggleLike(activeMyPost)" class="flex items-center gap-1.5 text-sm transition"
                 :class="activeMyPost.liked_by_user ? 'text-red-500' : 'text-gray-400 hover:text-red-400'">
                 <span class="text-lg">{{ activeMyPost.liked_by_user ? '❤️' : '🤍' }}</span>
                 <span>{{ activeMyPost.likes_count }}</span>
               </button>
-
-              <!-- Save -->
               <button @click="toggleSavePost(activeMyPost)" class="flex items-center gap-1.5 text-sm transition"
                 :class="activeMyPost.saved_by_user ? 'text-indigo-500' : 'text-gray-400 hover:text-indigo-400'">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
                 <span>{{ activeMyPost.saved_by_user ? 'Saved' : 'Save' }}</span>
               </button>
             </div>
-
-            <div class="flex items-center gap-3">
-              <!-- Edit -->
+            <div class="flex items-center gap-2 sm:gap-3">
               <button @click="openEditModal(activeMyPost)"
-                class="text-xs text-indigo-400 hover:text-indigo-600 border border-indigo-200 px-3 py-1 rounded-full transition">
-                Edit
-              </button>
-              <!-- Delete -->
+                class="text-xs text-indigo-400 hover:text-indigo-600 border border-indigo-200 px-2 sm:px-3 py-1 rounded-full transition">Edit</button>
               <button @click="confirmDeletePost(activeMyPost)"
-                class="text-xs text-red-400 hover:text-red-600 border border-red-200 px-3 py-1 rounded-full transition">
-                Delete
-              </button>
+                class="text-xs text-red-400 hover:text-red-600 border border-red-200 px-2 sm:px-3 py-1 rounded-full transition">Delete</button>
             </div>
           </div>
         </div>
@@ -505,38 +453,29 @@
         <h2 class="text-base font-semibold text-gray-800 dark:text-white mb-2">Delete post?</h2>
         <p class="text-sm text-gray-400 mb-6">This will permanently delete the post and image.</p>
         <div class="flex gap-3">
-          <button @click="deleteTarget = null"
-            class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
-          <button @click="deletePost"
-            class="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium transition">Delete</button>
+          <button @click="deleteTarget = null" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
+          <button @click="deletePost" class="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium transition">Delete</button>
         </div>
       </div>
     </div>
 
     <!-- ─── Edit Post Modal ─── -->
     <div v-if="editTarget" class="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-4">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-5 sm:p-6 flex flex-col gap-4">
         <div class="flex items-center justify-between">
           <h2 class="text-base font-semibold text-gray-800 dark:text-white">Edit Post</h2>
           <button @click="editTarget = null" class="text-gray-400 hover:text-gray-600">✕</button>
         </div>
-
         <textarea v-model="editForm.caption" placeholder="Caption..." rows="3" @input="autoResize($event)"
           class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none resize-none transition"
-          style="min-height: 80px; max-height: 200px; white-space: pre-wrap; word-break: break-word;">
-        </textarea>
-
+          style="min-height: 80px; max-height: 200px; white-space: pre-wrap; word-break: break-word;"></textarea>
         <select v-if="editTarget.post_type !== 'palette'" v-model="editForm.category"
           class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none transition">
           <option v-for="cat in postCategories" :key="cat" :value="cat">{{ cat }}</option>
         </select>
-
-        <p v-if="editMsg" class="text-xs" :class="editMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ editMsg
-        }}</p>
-
+        <p v-if="editMsg" class="text-xs" :class="editMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ editMsg }}</p>
         <div class="flex gap-3">
-          <button @click="editTarget = null"
-            class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
+          <button @click="editTarget = null" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
           <button @click="saveEdit" :disabled="savingEdit"
             class="flex-1 py-2.5 rounded-xl text-white text-sm font-medium disabled:opacity-40 transition"
             style="background: linear-gradient(to right, #4f46e5, #f97316)">
@@ -548,34 +487,24 @@
 
     <!-- ─── Appeal Modal ─── -->
     <div v-if="appealModal" class="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6 flex flex-col gap-4">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-5 sm:p-6 flex flex-col gap-4">
         <div class="flex items-center justify-between">
           <h2 class="text-base font-semibold text-gray-800 dark:text-white">Submit Appeal</h2>
           <button @click="appealModal = null" class="text-gray-400 hover:text-gray-600">✕</button>
         </div>
-
         <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-          <p class="text-xs font-medium text-amber-700 dark:text-amber-400">Warning Category: {{
-            appealModal.report_category }}</p>
-          <p class="text-xs text-amber-600 dark:text-amber-300 mt-1" style="white-space: pre-wrap; word-break: break-word;">
-            {{ appealModal.auto_caption || appealModal.admin_text }}
-          </p>
+          <p class="text-xs font-medium text-amber-700 dark:text-amber-400">Warning Category: {{ appealModal.report_category }}</p>
+          <p class="text-xs text-amber-600 dark:text-amber-300 mt-1" style="white-space: pre-wrap; word-break: break-word;">{{ appealModal.auto_caption || appealModal.admin_text }}</p>
         </div>
-
         <textarea v-model="appealText" placeholder="Write your apology and explanation..." rows="4"
           class="w-full border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none resize-none transition" style="white-space: pre-wrap; word-break: break-word;"></textarea>
-
         <div>
           <label class="text-xs text-gray-400 mb-1 block">Proof Images (optional, max 5)</label>
           <input type="file" multiple accept="image/*" @change="onAppealImagesChange" class="text-sm text-gray-500" />
         </div>
-
-        <p v-if="appealMsg" class="text-xs" :class="appealMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{
-          appealMsg }}</p>
-
+        <p v-if="appealMsg" class="text-xs" :class="appealMsg.includes('✓') ? 'text-green-500' : 'text-red-500'">{{ appealMsg }}</p>
         <div class="flex gap-3">
-          <button @click="appealModal = null"
-            class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
+          <button @click="appealModal = null" class="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-sm text-gray-500 transition">Cancel</button>
           <button @click="submitAppeal" :disabled="!appealText.trim() || appealSubmitting"
             class="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium disabled:opacity-40 transition">
             {{ appealSubmitting ? 'Submitting...' : 'Submit Appeal' }}
@@ -585,10 +514,8 @@
     </div>
 
     <!-- My Followers Modal -->
-    <div v-if="showMyFollowers" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4"
-      @click.self="showMyFollowers = false">
-      <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm max-h-[70vh] flex flex-col overflow-hidden">
+    <div v-if="showMyFollowers" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4" @click.self="showMyFollowers = false">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm max-h-[70vh] flex flex-col overflow-hidden">
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
           <h2 class="text-base font-semibold text-gray-800 dark:text-white">My Followers ({{ followersCount }})</h2>
           <button @click="showMyFollowers = false" class="text-gray-400 hover:text-gray-600">✕</button>
@@ -597,15 +524,13 @@
           <div v-if="!myFollowersList.length" class="text-center py-8 text-gray-400 text-sm">No followers yet</div>
           <div v-else class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
             <div v-for="person in myFollowersList" :key="person.id" class="flex items-center gap-3 px-5 py-3">
-              <div
-                class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
-                <img v-if="person.avatar" :src="getImageUrl(person.avatar)"
-                  class="w-full h-full object-cover" />
+              <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
+                <img v-if="person.avatar" :src="getImageUrl(person.avatar)" class="w-full h-full object-cover" />
                 <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{{ person.name }}</p>
-                <p class="text-xs text-gray-400 truncate" style="white-space: pre-wrap; word-break: break-word;">{{ person.bio || 'No bio' }}</p>
+                <p class="text-xs text-gray-400 truncate">{{ person.bio || 'No bio' }}</p>
               </div>
             </div>
           </div>
@@ -614,28 +539,23 @@
     </div>
 
     <!-- My Following Modal -->
-    <div v-if="showMyFollowing" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4"
-      @click.self="showMyFollowing = false">
-      <div
-        class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm max-h-[70vh] flex flex-col overflow-hidden">
+    <div v-if="showMyFollowing" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center px-4" @click.self="showMyFollowing = false">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm max-h-[70vh] flex flex-col overflow-hidden">
         <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
           <h2 class="text-base font-semibold text-gray-800 dark:text-white">Following ({{ followingCount }})</h2>
           <button @click="showMyFollowing = false" class="text-gray-400 hover:text-gray-600">✕</button>
         </div>
         <div class="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div v-if="!myFollowingList.length" class="text-center py-8 text-gray-400 text-sm">Not following anyone yet
-          </div>
+          <div v-if="!myFollowingList.length" class="text-center py-8 text-gray-400 text-sm">Not following anyone yet</div>
           <div v-else class="flex flex-col divide-y divide-gray-100 dark:divide-gray-700">
             <div v-for="person in myFollowingList" :key="person.id" class="flex items-center gap-3 px-5 py-3">
-              <div
-                class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
-                <img v-if="person.avatar" :src="getImageUrl(person.avatar)"
-                  class="w-full h-full object-cover" />
+              <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold overflow-hidden shrink-0">
+                <img v-if="person.avatar" :src="getImageUrl(person.avatar)" class="w-full h-full object-cover" />
                 <span v-else>{{ person.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{{ person.name }}</p>
-                <p class="text-xs text-gray-400 truncate" style="white-space: pre-wrap; word-break: break-word;">{{ person.bio || 'No bio' }}</p>
+                <p class="text-xs text-gray-400 truncate">{{ person.bio || 'No bio' }}</p>
               </div>
             </div>
           </div>
@@ -703,7 +623,6 @@ const reportTopics = [
   { value: 'other', icon: '❓', label: 'Other', desc: 'Something else' },
 ]
 
-// Comment report
 const reportCommentTarget = ref(null)
 const commentReport = ref({ topic: '', details: '' })
 const commentReporting = ref(false)
@@ -775,19 +694,12 @@ onMounted(async () => {
     followingCount.value = following.length
   } catch (e) { console.error(e) }
 
-  // Fetch warnings for the Warnings tab
   await fetchWarnings()
 })
 
-function openMyFollowers() {
-  showMyFollowers.value = true
-}
+function openMyFollowers() { showMyFollowers.value = true }
+function openMyFollowing() { showMyFollowing.value = true }
 
-function openMyFollowing() {
-  showMyFollowing.value = true
-}
-
-// ─── Open post — load comments ─────────────────────────
 async function openMyPost(post) {
   activeMyPost.value = { ...post }
   comments.value = []
@@ -799,7 +711,6 @@ async function openMyPost(post) {
   } catch (e) { console.error(e) }
 }
 
-// ─── Comments ──────────────────────────────────────────
 async function submitComment() {
   if (!newComment.value.trim() || !activeMyPost.value) return
   try {
@@ -841,13 +752,11 @@ async function deleteComment(commentId) {
   } catch (e) { console.error(e) }
 }
 
-// ─── Like / Save ───────────────────────────────────────
 async function toggleLike(post) {
   try {
     const { data } = await axios.post(`/api/posts/${post.id}/like`)
     post.liked_by_user = data.liked ? 1 : 0
     post.likes_count = data.likes_count
-    // sync the grid card
     const card = myPosts.value.find(p => p.id === post.id)
     if (card) { card.liked_by_user = post.liked_by_user; card.likes_count = post.likes_count }
   } catch (e) { console.error(e) }
@@ -868,7 +777,6 @@ async function copyHex(hex) {
   setTimeout(() => copiedHex.value = '', 2000)
 }
 
-// ─── Delete ────────────────────────────────────────────
 function confirmDeletePost(post) {
   deleteTarget.value = post
   activeMyPost.value = null
@@ -882,7 +790,6 @@ async function deletePost() {
   } catch (e) { console.error(e) }
 }
 
-// ─── Edit ──────────────────────────────────────────────
 function openEditModal(post) {
   editTarget.value = post
   editForm.value = { caption: post.caption || '', category: post.category || 'Other' }
@@ -910,13 +817,11 @@ async function saveEdit() {
   }
 }
 
-// ─── Warnings / Appeals ────────────────────────────────
 async function fetchWarnings() {
   warningsLoading.value = true
   try {
     const { data } = await axios.get('/api/my-warnings')
     myWarnings.value = Array.isArray(data) ? data : []
-    console.log('Warnings loaded:', myWarnings.value.length)
   } catch (e) {
     console.error('Failed to fetch warnings:', e?.response?.data || e)
     myWarnings.value = []
@@ -924,7 +829,6 @@ async function fetchWarnings() {
     warningsLoading.value = false
   }
 }
-
 
 function openAppealModal(warning) {
   appealModal.value = warning
@@ -951,17 +855,11 @@ async function submitAppeal() {
     const formData = new FormData()
     formData.append('apology_text', appealText.value.trim())
     appealImages.value.forEach(file => formData.append('images[]', file))
-
     const { data } = await axios.post(`/api/warnings/${appealModal.value.id}/appeal`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
-
-    // Update the warning in the list with the new appeal
     const idx = myWarnings.value.findIndex(w => w.id === appealModal.value.id)
-    if (idx !== -1) {
-      myWarnings.value[idx] = { ...myWarnings.value[idx], appeal: data }
-    }
-
+    if (idx !== -1) myWarnings.value[idx] = { ...myWarnings.value[idx], appeal: data }
     appealMsg.value = '✓ Appeal submitted!'
     setTimeout(() => { appealModal.value = null }, 2000)
   } catch (e) {
@@ -971,7 +869,6 @@ async function submitAppeal() {
   }
 }
 
-// ─── Avatar ────────────────────────────────────────────
 function triggerAvatarUpload() { avatarInput.value.click() }
 
 async function onAvatarChange(e) {
@@ -992,7 +889,6 @@ async function onAvatarChange(e) {
   } catch (e) { avatarMsg.value = 'Failed.'; setTimeout(() => avatarMsg.value = '', 3000) }
 }
 
-// ─── Profile fields ────────────────────────────────────
 async function saveName() {
   try {
     await axios.put('/api/user/name', { name: newName.value.trim() })
@@ -1024,7 +920,6 @@ async function changePassword() {
   } catch (e) { passwordError.value = e?.response?.data?.message || 'Incorrect current password.' }
 }
 
-// ─── Helpers ───────────────────────────────────────────
 function autoResize(e) {
   e.target.style.height = 'auto'
   e.target.style.height = e.target.scrollHeight + 'px'

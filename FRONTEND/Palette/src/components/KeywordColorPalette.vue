@@ -83,7 +83,7 @@
           <div
             v-for="(color, ci) in palette.colors.slice(0, colorCount)"
             :key="ci"
-            class="min-w-[50px] sm:flex-1 flex items-end justify-center pb-1 group relative cursor-pointer"
+            class="min-w-[70px] sm:flex-1 flex items-end justify-center pb-1 group relative cursor-pointer"
             :style="{ backgroundColor: color }"
             @click="copyHex(color)"
           >
@@ -94,7 +94,7 @@
         </div>
 
         <div class="flex px-1 pt-2 pb-1 bg-amber-50 dark:bg-gray-800 overflow-x-auto">
-          <div v-for="(color, ci) in palette.colors.slice(0, colorCount)" :key="ci" class="min-w-[50px] sm:flex-1 text-center">
+          <div v-for="(color, ci) in palette.colors.slice(0, colorCount)" :key="ci" class="min-w-[70px] sm:flex-1 text-center">
             <span class="font-mono text-gray-600 dark:text-gray-400 cursor-pointer hover:text-gray-900 dark:hover:text-white transition block truncate" style="font-size: 9px;" @click="copyHex(color)">
               {{ color }}
             </span>
@@ -219,3 +219,10 @@ async function saveSelected() {
   }
 }
 </script>
+
+<style scoped>
+  /* No Scrollbar */
+  [data-dark="true"]::-webkit-scrollbar {
+    display: none;
+  }
+</style>
