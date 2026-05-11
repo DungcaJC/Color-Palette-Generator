@@ -70,16 +70,16 @@
       Type a keyword and hit Generate
     </p>
 
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
       <div
         v-for="(palette, pi) in displayedPalettes"
         :key="palette.id"
-        class="rounded-2xl overflow-hidden border-2 transition"
+        class="w-full rounded-2xl overflow-hidden border-2 transition"
         :class="selectedIds.has(palette.id) ? 'border-orange-400 shadow-md' : 'border-orange-200 dark:border-orange-900'"
         :style="{ background: 'var(--palette-card-bg, #fdf3e3)' }"
         :data-dark="isDark"
       >
-        <div class="flex h-36 overflow-x-auto">
+        <div class="flex h-24 sm:h-36">
           <div
             v-for="(color, ci) in palette.colors.slice(0, colorCount)"
             :key="ci"
@@ -101,7 +101,7 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-between px-3 py-2 bg-amber-50 dark:bg-gray-800">
+        <div class="flex items-center justify-between px-4 py-3 bg-amber-50 dark:bg-gray-800">
           <span class="text-xs text-gray-400 dark:text-gray-500 truncate max-w-24">
             {{ palette.text || 'Untitled' }}
           </span>
